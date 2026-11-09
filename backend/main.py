@@ -143,7 +143,22 @@ def analyze_with_workflow(text):
         }
         for item in trace
     ]
-    baseline['recommendations']=workflow.get('recommendations',baseline['recommendations'])
+    recommendations=workflow.get('recommendations',baseline['recommendations'])
+    baseline['recommendations']=recommendations
+    if recommendations:
+        scores=[
+            max(0.0,min(1.0,float(
+                item.get('confidence')
+                if item.get('confidence') is not None
+                else item.get('retrieval_score',0)
+            )))
+            for item in recommendations
+        ]
+        baseline['overall_confidence']=round(sum(scores)/len(scores)*100,1)
+        baseline['gaps']=[
+            gap for gap in baseline.get('gaps',[])
+            if gap!='No supported code candidates were found in the active knowledge base.'
+        ]
     baseline['clinical_context']=workflow.get('context',baseline.get('clinical_context',{}))
     baseline['workflow']={
         'name':'LangGraph analysis workflow',
@@ -303,6 +318,12 @@ def model_status():
 
 @app.post('/api/auth/signup')
 def signup(payload: SignupRequest, response: Response):
+    if not settings['public_signup_enabled']:
+        raise HTTPException(
+            403,
+            'Public account registration is disabled. Ask your hospital '
+            'administrator to provision an authorized account.',
+        )
     email=payload.email.strip().lower()
     full_name=payload.full_name.strip()
     if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+',email) or len(full_name)<2:
@@ -554,6 +575,86 @@ async def analyze_synthetic_file(
         'demo_only':True,
         'case':make_demo_case(text,document_name,source_locations),
     }
+
+def save_fictional_practice_case(user, text, document_name, source, source_locations):
+    workspace=read_workspace_state(user['id'],user['full_name'])
+    result=analyze_with_workflow(text)
+    case_id='MB-'+uuid.uuid4().hex[:8].upper()
+    now=datetime.now().astimezone()
+    assigned_at,deadline_at=case_schedule(now)
+    status=case_review_status(result,workspace)
+    connection=conn()
+    try:
+        connection.execute(
+            'INSERT INTO cases(id,user_id,created_at,assigned_at,deadline_at,'
+            'document_name,source,text,status,overall_confidence,extracted_json,'
+            'recommendations_json,gaps_json,source_locations_json,workflow_json) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            (
+                case_id,user['id'],now.isoformat(timespec='seconds'),assigned_at,
+                deadline_at,document_name,source,text,status,
+                result['overall_confidence'],json.dumps(result['extracted']),
+                json.dumps(result['recommendations']),json.dumps(result['gaps']),
+                json.dumps(source_locations),json.dumps(result['workflow']),
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    add_activity(
+        user['id'],
+        'analysis',
+        f'Case {case_id} analyzed',
+        f'Fictional practice case; {len(result["recommendations"])} recommendation(s) generated.',
+    )
+    return {
+        'case':{
+            'id':case_id,**result,'status':status,
+            'created_at':now.isoformat(timespec='seconds'),
+            'assigned_at':assigned_at,'deadline_at':deadline_at,
+            'document_name':document_name,'source':source,
+            'source_locations':source_locations,
+        },
+    }
+
+@app.post('/api/practice/analyze/text')
+def analyze_fictional_practice_text(
+    payload:SyntheticTextRequest,
+    user=Depends(current_user),
+):
+    if not settings['synthetic_demo_enabled']:
+        raise HTTPException(404,'Fictional practice analysis is disabled.')
+    text=payload.text.strip()
+    if len(text)<10:
+        raise HTTPException(400,'Practice text must contain at least 10 characters.')
+    return save_fictional_practice_case(
+        user,text,'Fictional Pasted Text','fictional_practice',[],
+    )
+
+@app.post('/api/practice/analyze/file')
+async def analyze_fictional_practice_file(
+    file:UploadFile=File(...),
+    synthetic_only:bool=Form(False),
+    user=Depends(current_user),
+):
+    if not settings['synthetic_demo_enabled']:
+        raise HTTPException(404,'Fictional practice analysis is disabled.')
+    if not synthetic_only:
+        raise HTTPException(400,'Fictional practice documents require explicit labeling.')
+    allowed={'.txt','.json','.md','.csv','.log','.pdf','.docx'}
+    document_name=(file.filename or 'Fictional document').replace('\\','/').rsplit('/',1)[-1]
+    if Path(document_name).suffix.lower() not in allowed:
+        raise HTTPException(400,'Upload TXT, JSON, Markdown, CSV, LOG, PDF, or DOCX files.')
+    content=await file.read(10_000_001)
+    if len(content)>10_000_000:
+        raise HTTPException(413,'Files must be 10 MB or smaller.')
+    try:
+        text,source_locations=extract_document_text(document_name,content)
+    except ValueError as error:
+        raise HTTPException(400,str(error)) from error
+    return save_fictional_practice_case(
+        user,text,document_name,'fictional_practice_upload',source_locations,
+    )
 
 @app.post('/api/cases/{case_id}/decision')
 def decision(case_id:str, req:DecisionRequest, user=Depends(current_user)):

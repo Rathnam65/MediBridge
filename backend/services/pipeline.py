@@ -35,6 +35,9 @@ def negated(text, phrase):
         if re.search(r'\b(no|not|without|denies|denied|negative for)\b', text[max(0,m.start()-45):m.start()].lower()): return True
     return False
 
+def contains_term(text, phrase):
+    return re.search(rf'(?<!\w){re.escape(phrase)}(?!\w)', text, re.I) is not None
+
 def clinical_understanding(text):
     t=text.lower(); out={k:[] for k in ('diagnoses','symptoms','procedures','medications','negations')}
     terms=[('hypertension','diagnoses'),('high blood pressure','diagnoses'),('type 2 diabetes','diagnoses'),('diabetes mellitus','diagnoses'),('hyperlipidemia','diagnoses'),('gerd','diagnoses'),('reflux','diagnoses'),('upper respiratory infection','diagnoses'),('fatigue','symptoms'),('headache','symptoms'),('cough','symptoms'),('fever','symptoms'),('nausea','symptoms'),('blood pressure measurement','procedures'),('venipuncture','procedures'),('blood collection','procedures'),('a1c','procedures'),('metabolic panel','procedures'),('metformin','medications'),('lisinopril','medications'),('atorvastatin','medications')]
@@ -54,12 +57,12 @@ def coding_retrieval(text, extracted):
         candidates=[x.strip() for x in terms.split(separators) if x.strip()]
         hits=[
             x for x in candidates
-            if x.lower() in t and not negated(text,x)
+            if contains_term(text,x) and not negated(text,x)
             and (x.casefold() not in context or context[x.casefold()]['assertion']=='affirmed')
         ]
         if hits:
             match_score=len(hits)/len(candidates)
-            evidence=next((s.strip() for s in re.split(r'(?<=[.!?])\s+',text) if any(h.lower() in s.lower() for h in hits)),text[:180])
+            evidence=next((s.strip() for s in re.split(r'(?<=[.!?])\s+',text) if any(contains_term(s,h) for h in hits)),text[:180])
             recs.append({'type':typ,'code':code,'description':desc,'confidence':match_score,'evidence':evidence})
     return recs
 

@@ -17,6 +17,8 @@ services:
         sync: false
       - key: REQUIRE_POSTGRES
         value: "true"
+      - key: PUBLIC_SIGNUP_ENABLED
+        value: "false"
       - key: CLINICAL_DATA_APPROVED
         value: "false"
       - key: SYNTHETIC_DEMO_ENABLED

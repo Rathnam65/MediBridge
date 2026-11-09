@@ -11,13 +11,18 @@ let demoMode=false;
 let classroomModeEnabled=false;
 let fictionalOnlyAnalysis=false;
 
+function setAuthenticationMessage(message=''){
+  const status=$('#authMessage');
+  status.textContent=message;
+  status.hidden=!message;
+}
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
 function showAuthentication(message=''){
   $('#appShell').hidden=true;
   $('#authScreen').hidden=false;
-  $('#authMessage').textContent=message;
+  setAuthenticationMessage(message);
 }
 function switchAuthMode(mode){
   const signup=mode==='signup';
@@ -27,7 +32,7 @@ function switchAuthMode(mode){
   $('#signupTab').classList.toggle('active',signup);
   $('#loginTab').setAttribute('aria-selected',String(!signup));
   $('#signupTab').setAttribute('aria-selected',String(signup));
-  $('#authMessage').textContent='';
+  setAuthenticationMessage();
 }
 function initials(name){
   return name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'MB';
@@ -54,7 +59,7 @@ function enterPublicDemo(){
   demoMode=true;
   fictionalOnlyAnalysis=true;
   $('#appShell').classList.add('public-demo');
-  $('#analysis .heading p').textContent='Research prototype: clinical accuracy has not been established through coder-adjudicated evaluation. Not for clinical use.';
+  $('#analysis .heading p').textContent='Research demo only — not clinically validated or for clinical use.';
   authenticatedUser={full_name:'Guest demonstrator'};
   workspaceSettings={show_evidence:true,review_notifications:false};
   $('#authScreen').hidden=true;
@@ -63,7 +68,8 @@ function enterPublicDemo(){
   $('.notification-wrap').hidden=true;
   $('#help').hidden=true;
   $('.user').hidden=true;
-  $('#analysisAvailability').textContent='Fictional classroom mode. Inputs are processed temporarily, not saved, and must not contain real patient information.';
+  $('#analysisAvailability').textContent="Guest results aren't saved. Sign in to save cases.";
+  $('#analysisSaveNote').textContent='Sign in to save cases.';
   $('#analyze').disabled=false;
   showPage('analysis');
 }
@@ -90,7 +96,7 @@ async function submitAuth(event,endpoint){
   const form=event.currentTarget;
   const button=form.querySelector('button[type="submit"]');
   button.disabled=true;
-  $('#authMessage').textContent='Please wait…';
+  setAuthenticationMessage('Please wait…');
   const data=endpoint.endsWith('signup')
     ?{full_name:$('#signupName').value.trim(),email:$('#signupEmail').value.trim(),password:$('#signupPassword').value}
     :{email:$('#loginEmail').value.trim(),password:$('#loginPassword').value};
@@ -99,7 +105,7 @@ async function submitAuth(event,endpoint){
     form.reset();
     await enterWorkspace(result.user);
   }catch(error){
-    $('#authMessage').textContent=error.message;
+    setAuthenticationMessage(error.message);
   }finally{
     button.disabled=false;
   }
@@ -108,7 +114,8 @@ async function submitAuth(event,endpoint){
 async function loadAnalysisGate(){
   if(demoMode){
     fictionalOnlyAnalysis=true;
-    $('#analysisAvailability').textContent='Fictional classroom mode. Enter fictional text or upload a fictional document. Inputs and review decisions are not saved.';
+    $('#analysisAvailability').textContent="Guest results aren't saved. Sign in to save cases.";
+    $('#analysisSaveNote').textContent='Sign in to save cases.';
     $('#analyze').disabled=false;
     return;
   }
@@ -122,8 +129,11 @@ async function loadAnalysisGate(){
     $('#analysisAvailability').textContent=health.clinical_data_enabled
       ?'Clinical-document analysis is enabled by recorded deployment approval. Use fictional examples for this class demo.'
       :fictionalOnlyAnalysis
-        ?'Clinical analysis is locked. Fictional classroom analysis is available; inputs are temporary and not saved.'
+        ?'Clinical analysis is disabled. Fictional practice cases are saved to your Cases workspace.'
         :'Analysis is unavailable until deployment approval is recorded.';
+    $('#analysisSaveNote').textContent=fictionalOnlyAnalysis
+      ?'Fictional practice cases are saved to your Cases workspace.'
+      :'Analysis results are saved to your signed-in Cases workspace.';
   }catch(error){
     $('#analysisAvailability').textContent=`Analysis gate status unavailable: ${error.message}`;
     $('#analyze').disabled=true;
@@ -215,6 +225,9 @@ async function api(url,opt){
 }
 function metric(icon,cl,label,value,small){return `<div class="metric"><div class="metric-icon ${cl}">${icon}</div><div><span>${label}</span><strong>${value}</strong><small>${small}</small></div></div>`}
 function documentLabel(value){return String(value||'Clinical text').replace(/\bsynthetic\b/ig,'').replace(/\s{2,}/g,' ').trim()||'Clinical text'}
+function caseStatusLabel(status){
+  return ({Review:'Needs coder review',Pending:'Pending',Validated:'Completed'})[status]||status;
+}
 function recommendationCounts(recommendations=[]){
   return recommendations.reduce((counts,recommendation)=>{
     const type=String(recommendation.type||'').toUpperCase();
@@ -233,7 +246,7 @@ async function loadDashboard(){
       metric('✓','mi-green','Avg. text-match score',d.metrics.avg_confidence+'%','Keyword overlap only');
     $('#recent').innerHTML=d.cases.length?d.cases.map(item=>{
       const counts=recommendationCounts(item.recommendations);
-      return `<tr><td><button class="case-id-link case-open" type="button" data-id="${escapeHtml(item.id)}">${escapeHtml(item.id)}</button><span class="sub">${escapeHtml(new Date(item.created_at).toLocaleString())}</span></td><td>${escapeHtml(documentLabel(item.document_name))}</td><td><span class="code-counts"><b>ICD ${counts.icd}</b><b>HCPCS ${counts.hcpcs}</b></span></td><td><span class="confidence ${item.overall_confidence>=90?'high':'medium'}">${escapeHtml(item.overall_confidence)}%</span></td><td><span class="status ${item.status==='Validated'?'approved':item.status==='Pending'?'pending':'review'}">${escapeHtml(item.status)}</span></td></tr>`;
+      return `<tr><td><button class="case-id-link case-open" type="button" data-id="${escapeHtml(item.id)}">${escapeHtml(item.id)}</button><span class="sub">${escapeHtml(new Date(item.created_at).toLocaleString())}</span></td><td>${escapeHtml(documentLabel(item.document_name))}</td><td><span class="code-counts"><b>ICD ${counts.icd}</b><b>HCPCS ${counts.hcpcs}</b></span></td><td><span class="confidence ${item.overall_confidence>=90?'high':'medium'}">${escapeHtml(item.overall_confidence)}%</span></td><td><span class="status ${item.status==='Validated'?'approved':item.status==='Pending'?'pending':'review'}">${escapeHtml(caseStatusLabel(item.status))}</span></td></tr>`;
     }).join(''):'<tr><td colspan="5" class="case-state"><b>No cases to display</b><span>Start a new analysis to create a case for review.</span></td></tr>';
     loadAgentsMini();
   }catch(error){toast('Dashboard error',error.message)}
@@ -266,9 +279,9 @@ function renderCaseSummary(){
   };
   $('#caseSummary').innerHTML=[
     ['All cases',counts.total,'Total in your workspace'],
-    ['Needs review',counts.review,'Requires coder attention'],
+    ['Needs coder review',counts.review,'Requires coder attention'],
     ['Pending',counts.pending,'Awaiting review'],
-    ['Validated',counts.validated,'Review completed']
+    ['Completed',counts.validated,'Coder review completed']
   ].map(([label,count,description])=>`<div class="case-stat"><span>${label}</span><b>${count}</b><small>${description}</small></div>`).join('');
 }
 function renderCaseList(){
@@ -294,7 +307,7 @@ function renderCaseList(){
       const counts=recommendationCounts(item.recommendations);
       const docName=documentLabel(item.document_name);
       const extension=docName.match(/\.([a-z0-9]{2,5})$/i)?.[1]?.toUpperCase()||'TEXT';
-      return `<tr><td><button class="case-id-link case-open" type="button" data-id="${escapeHtml(item.id)}">${escapeHtml(item.id)}</button><span class="sub">Coding review</span></td><td><span class="document-name">${escapeHtml(docName)}</span><span class="document-type">${escapeHtml(extension)} document</span></td><td>${escapeHtml(date)}</td><td><span class="code-count">${counts.icd}</span></td><td><span class="code-count">${counts.hcpcs}</span></td><td><span class="confidence ${item.overall_confidence>=90?'high':'medium'}">${escapeHtml(item.overall_confidence)}%</span></td><td><span class="status ${statusClass}">${escapeHtml(item.status)}</span></td><td><details class="case-actions"><summary aria-label="Actions for ${escapeHtml(item.id)}">•••</summary><div class="case-actions-menu"><button type="button" data-action="open-case" data-case-id="${escapeHtml(item.id)}">Open review</button><button type="button" data-action="export-case" data-case-id="${escapeHtml(item.id)}">Export PDF</button></div></details></td></tr>`;
+      return `<tr><td><button class="case-id-link case-open" type="button" data-id="${escapeHtml(item.id)}">${escapeHtml(item.id)}</button><span class="sub">Coding review</span></td><td><span class="document-name">${escapeHtml(docName)}</span><span class="document-type">${escapeHtml(extension)} document</span></td><td>${escapeHtml(date)}</td><td><span class="code-count">${counts.icd}</span></td><td><span class="code-count">${counts.hcpcs}</span></td><td><span class="confidence ${item.overall_confidence>=90?'high':'medium'}">${escapeHtml(item.overall_confidence)}%</span></td><td><span class="status ${statusClass}">${escapeHtml(caseStatusLabel(item.status))}</span></td><td><details class="case-actions"><summary aria-label="Actions for ${escapeHtml(item.id)}">•••</summary><div class="case-actions-menu"><button type="button" data-action="open-case" data-case-id="${escapeHtml(item.id)}">Open review</button><button type="button" data-action="export-case" data-case-id="${escapeHtml(item.id)}">Export PDF</button></div></details></td></tr>`;
     }).join('');
   }else{
     const isEmpty=caseRecords.length===0;
@@ -387,6 +400,16 @@ function appendCodeCards(records){
     $('#codes').append(card);
   }
 }
+async function loadCatalogStatus(){
+  try{
+    const result=await api('/api/catalogs');
+    $('#catalogStatus').textContent=result.catalogs.length
+      ?`Installed references: ${result.catalogs.map(catalog=>`${catalog.type} (${catalog.records.toLocaleString()} codes)`).join(', ')}. Search results are limited to these catalogs.`
+      :'No coding reference catalogs are installed. Add licensed reference data before using code lookup.';
+  }catch(error){
+    $('#catalogStatus').textContent=`Catalog status unavailable: ${error.message}`;
+  }
+}
 async function loadCodes(q=$('#codeSearch').value,append=false){
   if(!append)codeSearchTerm=q.trim();
   if(codeSearchTerm.length<2){
@@ -395,16 +418,6 @@ async function loadCodes(q=$('#codeSearch').value,append=false){
     $('#codeCount').textContent='';
     $('#codeMore').hidden=true;
     return;
-  }
-  async function loadCatalogStatus(){
-    try{
-      const result=await api('/api/catalogs');
-      $('#catalogStatus').textContent=result.catalogs.length
-        ?`Installed references: ${result.catalogs.map(catalog=>`${catalog.type} (${catalog.records.toLocaleString()} codes)`).join(', ')}. Search results are limited to these catalogs.`
-        :'No coding reference catalogs are installed. Add licensed reference data before using code lookup.';
-    }catch(error){
-      $('#catalogStatus').textContent=`Catalog status unavailable: ${error.message}`;
-    }
   }
   try{
     const page=await api(`/api/codes?q=${encodeURIComponent(codeSearchTerm)}&limit=${codePageSize+1}&offset=${codeSearchOffset}`);
@@ -436,11 +449,6 @@ $('#analyze').onclick=async()=>{
   const status=$('#analysisAvailability');
   const text=$('#text').value.trim();
   const selectedFile=file.files[0];
-  if(fictionalOnlyAnalysis&&!$('#fictionalAck').checked){
-    status.textContent='Analysis not started. Confirm that the input is fictional and contains no real patient information.';
-    toast('Confirmation required','Confirm the input contains no real patient information.');
-    return;
-  }
   if(!text&&!selectedFile){
     status.textContent=fictionalOnlyAnalysis
       ?'Analysis not started. Paste fictional text or choose a fictional document first.'
@@ -454,7 +462,7 @@ $('#analyze').onclick=async()=>{
   status.textContent='Analysis is running. Please wait while the workflow reviews your input.';
   try{
     let res;
-    if(fictionalOnlyAnalysis){
+    if(fictionalOnlyAnalysis&&demoMode){
       if(text){
         res=await api('/api/demo/analyze/text',{
           method:'POST',
@@ -467,6 +475,19 @@ $('#analyze').onclick=async()=>{
         fd.append('synthetic_only','true');
         res=await api('/api/demo/analyze/file',{method:'POST',body:fd});
       }
+    }else if(fictionalOnlyAnalysis){
+      if(text){
+        res=await api('/api/practice/analyze/text',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({text,synthetic_only:true})
+        });
+      }else{
+        const fd=new FormData();
+        fd.append('file',selectedFile);
+        fd.append('synthetic_only','true');
+        res=await api('/api/practice/analyze/file',{method:'POST',body:fd});
+      }
     }else if(text){
       res=await api('/api/analyze/text',{
         method:'POST',
@@ -478,10 +499,16 @@ $('#analyze').onclick=async()=>{
       fd.append('file',selectedFile);
       res=await api('/api/analyze/file',{method:'POST',body:fd});
     }
+    status.textContent='Analysis complete.';
     renderResult(res.case);
     showPage('result');
-    if(!demoMode&&!fictionalOnlyAnalysis)loadNotifications();
-    toast('Analysis complete',res.case.id);
+    if(!res.case.demo_only){
+      loadNotifications();
+      loadDashboard();
+      toast('Case saved for review',`${res.case.id} · ${caseStatusLabel(res.case.status)}`);
+    }else{
+      toast('Analysis complete',res.case.id);
+    }
   }catch(error){
     status.textContent=`Analysis failed: ${error.message}`;
     toast('Analysis failed',error.message);
@@ -495,7 +522,7 @@ function renderResult(c){
   const recommendations=Array.isArray(c.recommendations)?c.recommendations:[];
   const counts=recommendationCounts(recommendations);
   $('#resultSub').textContent=`Case ${c.id} · ${c.status}`;
-  $('#resultStatus').textContent=`Case status: ${c.status}`;
+  $('#resultStatus').textContent=`Case status: ${caseStatusLabel(c.status)}`;
   const locations=(c.source_locations||[]).map(location=>location.page?`PDF page ${location.page}`:location.paragraph?`DOCX paragraph ${location.paragraph}`:'Document text');
   const sourceSummary=locations.length?` Source: ${[...new Set(locations)].join(', ')}.`:'';
   const workflow=c.workflow||{};
@@ -597,7 +624,7 @@ function printReport(record){
   window.print();
 }
 $('#exportResult').addEventListener('click',()=>printReport(currentCase));
-  async function decide(id,status){  if(currentCase?.demo_only&&currentCase.id===id){currentCase.status=status;renderResult(currentCase);toast('Review updated','This decision exists only in the current browser session.');return}try{await api('/api/cases/'+id+'/decision',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision:status,note:'Coder action from MediBridge frontend.'})});const c=await api('/api/cases/'+id);renderResult(c);loadNotifications();if(status==='Validated')toast('Case updated','Marked validated.');else toast('Case updated','Returned for coder review.')}catch(e){toast('Update failed',e.message)}}
+  async function decide(id,status){  if(currentCase?.demo_only&&currentCase.id===id){currentCase.status=status;renderResult(currentCase);toast('Review updated','This decision exists only in the current browser session.');return}try{await api('/api/cases/'+id+'/decision',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision:status,note:'Coder action from MediBridge frontend.'})});const c=await api('/api/cases/'+id);renderResult(c);loadNotifications();if(status==='Validated')toast('Case updated','Coder review completed.');else if(status==='Review')toast('Case updated','Needs coder review.');else toast('Case updated','Returned to pending.')}catch(e){toast('Update failed',e.message)}}
 document.addEventListener('click',async e=>{
   const notification=e.target.closest('.notification-item');
   if(notification){
@@ -672,7 +699,8 @@ $('#saveProfile').onclick = saveWorkspaceFromUI;
 $('#thresholdSelect').onchange = saveWorkspaceFromUI;
 $('#loginTab').onclick=()=>switchAuthMode('login');
 $('#signupTab').onclick=()=>switchAuthMode('signup');
-$('#enterPublicDemo').onclick=enterPublicDemo;
+const publicDemoButton=$('#enterPublicDemo');
+if(publicDemoButton)publicDemoButton.onclick=enterPublicDemo;
 $('#loginForm').addEventListener('submit',event=>submitAuth(event,'/api/auth/login'));
 $('#signupForm').addEventListener('submit',event=>submitAuth(event,'/api/auth/signup'));
 $('#signOut').onclick=async()=>{

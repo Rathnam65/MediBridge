@@ -282,12 +282,18 @@ def test_clinical_analysis_is_disabled_without_explicit_approval(tmp_path, monke
 def test_production_health_reports_safe_gates_and_https_headers(tmp_path, monkeypatch):
     monkeypatch.setattr(database, 'DB', tmp_path / 'production-health.sqlite')
     monkeypatch.setitem(main.settings, 'app_env', 'production')
+    monkeypatch.setitem(main.settings, 'public_signup_enabled', False)
     monkeypatch.setitem(main.settings, 'clinical_data_approved', False)
     monkeypatch.setitem(main.settings, 'synthetic_demo_enabled', True)
     database.init_db()
 
     with TestClient(app) as client:
         response = client.get('/api/health')
+        signup = client.post('/api/auth/signup', json={
+            'full_name': 'Unauthorized Signup',
+            'email': 'unapproved@example.org',
+            'password': 'guidepass6',
+        })
 
     assert response.status_code == 200
     assert response.json()['environment'] == 'production'
@@ -295,6 +301,7 @@ def test_production_health_reports_safe_gates_and_https_headers(tmp_path, monkey
     assert response.json()['synthetic_demo_enabled'] is True
     assert response.headers['strict-transport-security'].startswith('max-age=')
     assert response.headers['cache-control'] == 'no-store'
+    assert signup.status_code == 403
 
 
 def test_complete_release_evidence_still_cannot_bypass_missing_org_approval(
@@ -484,6 +491,66 @@ def test_docx_upload_persists_extracted_source_locations(tmp_path, monkeypatch):
     assert stored.status_code == 200
     assert stored.json()['workflow']['name'] == 'LangGraph analysis workflow'
     assert stored.json()['workflow']['engine'] == 'LangGraph'
+
+
+def test_signed_in_fictional_practice_cases_are_saved_for_coder_review(tmp_path, monkeypatch):
+    monkeypatch.setattr(database, 'DB', tmp_path / 'fictional-practice.db')
+    monkeypatch.setitem(main.settings, 'synthetic_demo_enabled', True)
+    monkeypatch.setitem(main.settings, 'clinical_data_approved', False)
+    database.init_db()
+
+    with TestClient(app) as coder, TestClient(app) as another_coder:
+        signup = coder.post('/api/auth/signup', json={
+            'full_name': 'Practice Coder',
+            'email': 'practice-coder@example.org',
+            'password': 'guidepass6',
+        })
+        assert signup.status_code == 200
+        text_response = coder.post('/api/practice/analyze/text', json={
+            'text': 'Fictional practice note: patient has hypertension.',
+            'synthetic_only': True,
+        })
+        assert text_response.status_code == 200
+        text_case = text_response.json()['case']
+        assert text_case['source'] == 'fictional_practice'
+        assert text_case['status'] in {'Pending', 'Review'}
+
+        upload_response = coder.post(
+            '/api/practice/analyze/file',
+            data={'synthetic_only': 'true'},
+            files={'file': ('fictional.txt', b'Fictional classroom note for coder review.')},
+        )
+        assert upload_response.status_code == 200
+        upload_case = upload_response.json()['case']
+        assert upload_case['source'] == 'fictional_practice_upload'
+        assert upload_case['document_name'] == 'fictional.txt'
+
+        cases = coder.get('/api/cases')
+        assert cases.status_code == 200
+        assert {case['id'] for case in cases.json()} == {
+            text_case['id'],
+            upload_case['id'],
+        }
+        assert coder.post(
+            f"/api/cases/{text_case['id']}/decision",
+            json={'decision': 'Review', 'note': 'Needs additional coder review.'},
+        ).status_code == 200
+        assert coder.get(f"/api/cases/{text_case['id']}").json()['status'] == 'Review'
+
+        other_signup = another_coder.post('/api/auth/signup', json={
+            'full_name': 'Another Coder',
+            'email': 'another-practice-coder@example.org',
+            'password': 'guidepass7',
+        })
+        assert other_signup.status_code == 200
+        assert another_coder.get('/api/cases').json() == []
+        assert another_coder.get(f"/api/cases/{text_case['id']}").status_code == 404
+
+    connection = database.conn()
+    assert connection.execute(
+        'SELECT COUNT(*) FROM cases'
+    ).fetchone()[0] == 2
+    connection.close()
 
 
 def test_legacy_database_migration_preserves_cases_and_global_settings(tmp_path, monkeypatch):

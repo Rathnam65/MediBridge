@@ -1,7 +1,9 @@
 from pathlib import Path
 import re
 from .config import get_settings
+import os
 import sqlite3
+import tempfile
 from collections.abc import Mapping
 
 from sqlalchemy import create_engine, text
@@ -108,6 +110,45 @@ def conn():
     c.execute('PRAGMA foreign_keys=ON')
     c.execute('PRAGMA busy_timeout=30000')
     return c
+
+
+def _backup_sqlite_database(source_path, destination_path):
+    destination_path=Path(destination_path)
+    destination_path.parent.mkdir(parents=True,exist_ok=True)
+    temporary_path=None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=destination_path.parent,
+            prefix=f'.{destination_path.name}.',
+            suffix='.tmp',
+            delete=False,
+        ) as temporary:
+            temporary_path=Path(temporary.name)
+        source=sqlite3.connect(source_path,timeout=30)
+        try:
+            destination=sqlite3.connect(temporary_path,timeout=30)
+            try:
+                source.backup(destination)
+            finally:
+                destination.close()
+        finally:
+            source.close()
+        os.replace(temporary_path,destination_path)
+    except Exception:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise
+
+
+def _migrate_default_local_database():
+    if _settings['database_path_explicit'] or DB.exists():
+        return
+    legacy_path=BASE/'database'/'medibridge.db'
+    if legacy_path.resolve()==DB.resolve() or not legacy_path.is_file():
+        return
+    _backup_sqlite_database(legacy_path,DB)
+
+
 def init_db():
     if DATABASE_URL:
         from alembic import command
@@ -116,6 +157,7 @@ def init_db():
         alembic_config=Config(str(BASE/'alembic.ini'))
         command.upgrade(alembic_config,'head')
         return
+    _migrate_default_local_database()
     c=conn()
     existing_settings = c.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings'"

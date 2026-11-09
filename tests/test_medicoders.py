@@ -1011,7 +1011,8 @@ def test_app_settings_are_loaded_from_environment(monkeypatch):
     monkeypatch.setenv(
         "DATABASE_URL", "postgresql://demo:secret@ep-example.neon.tech/app"
     )
-    monkeypatch.setenv("REQUIRE_POSTGRES", "true")
+    monkeypatch.setenv("REQUIRE_POSTGRES", "false")
+    monkeypatch.setenv("PUBLIC_SIGNUP_ENABLED", "true")
     monkeypatch.delenv("CLINICAL_DATA_APPROVED", raising=False)
     settings = get_settings()
 
@@ -1023,6 +1024,44 @@ def test_app_settings_are_loaded_from_environment(monkeypatch):
     assert settings["analysis_gate_reasons"]
     assert settings["database_url"].startswith("postgresql://")
     assert settings["require_postgres"] is True
+    assert settings["public_signup_enabled"] is False
+
+
+def test_default_database_path_uses_local_app_data(monkeypatch, tmp_path):
+    import sys
+
+    monkeypatch.delenv("DATABASE_PATH", raising=False)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    settings = get_settings()
+
+    assert settings["database_path"] == tmp_path / "MediBridge" / "medibridge.db"
+    assert settings["database_path_explicit"] is False
+
+
+def test_sqlite_backup_preserves_records(tmp_path):
+    from backend.database import _backup_sqlite_database
+    import sqlite3
+
+    source = tmp_path / "source.sqlite"
+    destination = tmp_path / "local" / "medibridge.sqlite"
+    connection = sqlite3.connect(source)
+    connection.execute("CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT)")
+    connection.execute(
+        "INSERT INTO users (id, email) VALUES (?, ?)",
+        ("user-1", "coder@example.org"),
+    )
+    connection.commit()
+    connection.close()
+
+    _backup_sqlite_database(source, destination)
+
+    copied = sqlite3.connect(destination)
+    assert copied.execute("SELECT id, email FROM users").fetchall() == [
+        ("user-1", "coder@example.org"),
+    ]
+    copied.close()
 
 
 def test_render_blueprint_uses_free_web_service_and_secret_postgres_url():
@@ -1038,6 +1077,7 @@ def test_render_blueprint_uses_free_web_service_and_secret_postgres_url():
     assert "disk" not in service
     assert variables["DATABASE_URL"]["sync"] is False
     assert variables["REQUIRE_POSTGRES"]["value"] == "true"
+    assert variables["PUBLIC_SIGNUP_ENABLED"]["value"] == "false"
     assert variables["CLINICAL_DATA_APPROVED"]["value"] == "false"
     assert variables["SYNTHETIC_DEMO_ENABLED"]["value"] == "true"
 
@@ -1175,6 +1215,56 @@ def test_context_extraction_flags_conflicts_and_pipeline_abstains_historical_cod
     assert result['recommendations']
     historical_only = pipeline.analyze_text("History of hypertension.")
     assert historical_only['recommendations'] == []
+
+
+def test_code_term_matching_requires_word_boundaries(monkeypatch):
+    from backend.services import pipeline
+
+    monkeypatch.setattr(pipeline, 'CODES', [
+        ('ICD-10-CM', 'Q96.0', 'Karyotype 45,X', 'Karyotype 45, X'),
+    ])
+
+    result = pipeline.coding_retrieval(
+        'Fictional example with hypertension.',
+        {},
+    )
+
+    assert result == []
+
+
+def test_analysis_summary_matches_workflow_recommendations(monkeypatch):
+    from backend import main
+
+    baseline = {
+        'recommendations': [],
+        'gaps': [
+            'No supported code candidates were found in the active knowledge base.',
+        ],
+        'overall_confidence': 0,
+        'extracted': {},
+        'clinical_context': {},
+    }
+    workflow = {
+        'recommendations': [
+            {'code': 'I10', 'confidence': None, 'retrieval_score': 0.75},
+            {'code': 'E11.9', 'confidence': 0.5},
+        ],
+        'context': {},
+        'model_status': 'unconfigured',
+        'retrieval_method': 'lexical',
+        'pipeline_trace': [],
+        'review_reasons': [],
+    }
+    monkeypatch.setattr(main, 'analyze_text', lambda text: baseline.copy())
+    monkeypatch.setattr(
+        main, 'run_analysis_workflow', lambda text, result: workflow
+    )
+
+    result = main.analyze_with_workflow('Fictional example.')
+
+    assert result['overall_confidence'] == 62.5
+    assert result['recommendations'] == workflow['recommendations']
+    assert result['gaps'] == []
 
 
 def test_analyze_text_only_returns_matches_from_loaded_reference_data(monkeypatch):

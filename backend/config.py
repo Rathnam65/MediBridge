@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -39,6 +40,17 @@ load_dotenv(BASE_DIR / '.env')
 def get_settings() -> dict:
     """Load app settings from environment variables with sane defaults."""
     app_env = os.getenv("APP_ENV", "development").lower()
+    public_signup_enabled = os.getenv(
+        "PUBLIC_SIGNUP_ENABLED",
+        "false" if app_env == "production" else "true",
+    ).lower() in {"1", "true", "yes", "on"}
+    if app_env == "production":
+        public_signup_enabled = False
+    require_postgres = (
+        app_env == "production"
+        or os.getenv("REQUIRE_POSTGRES", "false").lower()
+        in {"1", "true", "yes", "on"}
+    )
     synthetic_demo_value = os.getenv("SYNTHETIC_DEMO_ENABLED")
     synthetic_demo_requested = (synthetic_demo_value or "").lower() in {
         "1", "true", "yes", "on"
@@ -48,7 +60,16 @@ def get_settings() -> dict:
         if synthetic_demo_value is not None
         else app_env != "production"
     )
-    database_path = Path(os.getenv("DATABASE_PATH", str(BASE_DIR / "database" / "medibridge.db"))).expanduser()
+    database_path_setting = os.getenv("DATABASE_PATH", "").strip()
+    if database_path_setting:
+        database_path = Path(database_path_setting).expanduser()
+    elif sys.platform == "win32":
+        local_app_data = Path(
+            os.getenv("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))
+        )
+        database_path = local_app_data / "MediBridge" / "medibridge.db"
+    else:
+        database_path = Path.home() / ".local" / "share" / "MediBridge" / "medibridge.db"
     if not database_path.is_absolute():
         database_path = BASE_DIR / database_path
     approvals_path = Path(os.getenv(
@@ -80,6 +101,7 @@ def get_settings() -> dict:
     return {
         "app_name": os.getenv("APP_NAME", "MediBridge"),
         "app_env": app_env,
+        "public_signup_enabled": public_signup_enabled,
         "synthetic_demo_enabled": synthetic_demo_enabled,
         "host": os.getenv("HOST", "127.0.0.1"),
         "port": int(os.getenv("PORT", "8000")),
@@ -107,8 +129,7 @@ def get_settings() -> dict:
         ],
         "uploads_dir": BASE_DIR / "uploads",
         "database_path": database_path,
+        "database_path_explicit": bool(database_path_setting),
         "database_url": os.getenv("DATABASE_URL", "").strip() or None,
-        "require_postgres": os.getenv("REQUIRE_POSTGRES", "false").lower() in {
-            "1", "true", "yes", "on"
-        },
+        "require_postgres": require_postgres,
     }
