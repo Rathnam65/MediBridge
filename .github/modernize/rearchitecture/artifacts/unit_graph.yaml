@@ -1,0 +1,81 @@
+units:
+  - name: api-workflows
+    trigger: api
+    trigger_detail: "FastAPI REST routes under /api/*; static-page fallback at /{path:path}"
+    source_anchors:
+      - path: backend/main.py
+        line: 148
+    exported_signature:
+      - method: "GET /api/health() -> service and catalog status"
+        source_loc: "backend/main.py:148"
+        stability: must_preserve
+      - method: "POST /api/analyze/text(TextRequest) -> case analysis"
+        source_loc: "backend/main.py:318"
+        stability: may_change
+      - method: "POST /api/analyze/file(UploadFile) -> case analysis"
+        source_loc: "backend/main.py:327"
+        stability: may_change
+      - method: "GET /api/codes(q, limit, offset) -> catalog page"
+        source_loc: "backend/main.py:356"
+        stability: must_preserve
+    dynamic_entrypoints: []
+    depends_on:
+      - unit: clinical-analysis
+        via: "analyze_text()"
+      - unit: web-client
+        via: "HTTP requests and browser static-file serving"
+    shared_refs:
+      - module: sqlite-database
+        used_fields: [conn, init_db]
+      - module: clinical-analysis-service
+        used_fields: [CODES, analyze_text]
+  - name: clinical-analysis
+    trigger: api
+    trigger_detail: "Called by API and the synthetic demo seeder for clinical-text analysis"
+    source_anchors:
+      - path: backend/services/pipeline.py
+    exported_signature:
+      - method: "analyze_text(text) -> extracted, recommendations, gaps, overall_confidence"
+        source_loc: "backend/services/pipeline.py:71"
+        stability: may_change
+    dynamic_entrypoints: []
+    depends_on: []
+    shared_refs: []
+  - name: web-client
+    trigger: page
+    trigger_detail: "Browser SPA served by FastAPI; pages are switched client-side"
+    source_anchors:
+      - path: frontend/index.html
+      - path: frontend/app.js
+      - path: frontend/styles.css
+      - path: frontend/theme.css
+    exported_signature: []
+    dynamic_entrypoints: []
+    depends_on:
+      - unit: api-workflows
+        via: "same-origin REST requests using the session cookie"
+    shared_refs: []
+  - name: catalog-preparation
+    trigger: cli
+    trigger_detail: "python scripts/prepare_data.py <source-folder>"
+    source_anchors:
+      - path: scripts/prepare_data.py
+    exported_signature: []
+    dynamic_entrypoints: []
+    depends_on: []
+    shared_refs: []
+  - name: synthea-demo-seeding
+    trigger: cli
+    trigger_detail: "python scripts/seed_synthea_demo.py <csv-folder>"
+    source_anchors:
+      - path: scripts/seed_synthea_demo.py
+    exported_signature: []
+    dynamic_entrypoints: []
+    depends_on:
+      - unit: clinical-analysis
+        via: "analyze_text()"
+    shared_refs:
+      - module: sqlite-database
+        used_fields: [conn]
+      - module: clinical-analysis-service
+        used_fields: [analyze_text]

@@ -1,0 +1,9 @@
+unit: catalog-preparation
+bindings:
+  - type: "convention"
+    name: "Python CLI entrypoint"
+    source_loc: "scripts/prepare_data.py:224"
+    target: "main()"
+    must_appear_in_target: true
+    notes: "Consumes a positional source-folder argument."
+runtime_config: []

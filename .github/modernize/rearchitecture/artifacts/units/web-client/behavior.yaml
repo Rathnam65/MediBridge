@@ -1,0 +1,30 @@
+unit: web-client
+side_effects:
+  - source_loc: "frontend/app.js:210"
+    effect: "submits clinical text or an uploaded file to the analysis API and renders the result"
+    must_preserve: true
+  - source_loc: "frontend/app.js:313"
+    effect: "restores the authenticated browser session by requesting /api/auth/me"
+    must_preserve: true
+branches:
+  - source_loc: "frontend/app.js:210"
+    condition: "neither text nor a file is provided"
+    behavior: "show an add-documentation notification and do not submit"
+    must_preserve: true
+  - source_loc: "frontend/app.js:12"
+    condition: "authentication is absent or API returns 401"
+    behavior: "hide the app workspace and show sign-in"
+    must_preserve: true
+  - source_loc: "frontend/app.js:266"
+    condition: "notification has an account-owned case id"
+    behavior: "fetch the case and open the recommendation review page"
+    must_preserve: true
+error_paths:
+  - source_loc: "frontend/app.js:210"
+    trigger: "analysis API returns an error"
+    outcome: "show an analysis-failed notification with server message"
+    contract: "user-visible toast; no success-shaped fallback"
+    must_preserve: true
+concurrency:
+  model: event-loop
+  notes: "Browser fetch operations are asynchronous."

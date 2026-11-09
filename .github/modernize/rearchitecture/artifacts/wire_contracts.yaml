@@ -1,0 +1,145 @@
+contracts:
+  - name: health
+    unit: api-workflows
+    type: rest
+    stability: must_preserve
+    source_loc: "backend/main.py:148"
+    contract:
+      method: GET
+      path: /api/health
+      request: "none"
+      response: "{status, service, environment, time, catalogs}"
+      error: "Framework error response"
+      auth: none
+    target_contract:
+      method: "GET /api/health -> JSON status and available-catalog counts"
+      notes: "Preserve health semantics and current catalog count reporting."
+    semantic_divergence: []
+  - name: account-authentication
+    unit: api-workflows
+    type: rest
+    stability: must_preserve
+    source_loc: "backend/main.py:164"
+    contract:
+      method: "POST"
+      path: "/api/auth/signup, /api/auth/login, /api/auth/logout, /api/auth/me"
+      request: "SignupRequest / LoginRequest / browser cookie"
+      response: "user object, logout status, or current user"
+      error: "400 invalid profile; 401 invalid credentials/session; 409 duplicate email; 422 schema validation"
+      auth: "Expiring HTTP-only SameSite=Strict cookie; Secure in production"
+    target_contract:
+      method: "Preserve the documented REST paths and session-cookie workflow"
+      notes: "Cookie-based authorization is used by protected account routes."
+    semantic_divergence: []
+  - name: account-workspace
+    unit: api-workflows
+    type: rest
+    stability: must_preserve
+    source_loc: "backend/main.py:292"
+    contract:
+      method: "GET, POST"
+      path: "/api/workspace"
+      request: "account settings JSON on POST"
+      response: "account workspace settings"
+      error: "400 invalid settings; 401 unauthenticated"
+      auth: "current-user session"
+    target_contract:
+      method: "Preserve GET/POST /api/workspace and per-user settings"
+      notes: "Settings remain scoped to the authenticated user."
+    semantic_divergence: []
+  - name: analysis-and-case-review
+    unit: api-workflows
+    type: rest
+    stability: must_preserve
+    source_loc: "backend/main.py:318"
+    contract:
+      method: "POST, GET"
+      path: "/api/analyze/text, /api/analyze/file, /api/cases, /api/cases/{case_id}, /api/cases/{case_id}/decision, /api/dashboard"
+      request: "TextRequest; text file upload; case id; DecisionRequest"
+      response: "Account-owned case with extracted data, recommendations, gaps, score, status, assignment/deadline dates"
+      error: "400 unsupported/short/invalid input; 401 unauthenticated; 404 case not owned or absent; 413 upload over 10 MB; 422 schema validation"
+      auth: "current-user session; case reads and decisions are filtered by user_id"
+    target_contract:
+      method: "Preserve account-scoped analysis, retrieval, and human decision operations"
+      notes: "New extraction and coding outputs require evidence provenance and must not silently bypass human review."
+    semantic_divergence: []
+  - name: notifications
+    unit: api-workflows
+    type: rest
+    stability: must_preserve
+    source_loc: "backend/main.py:240"
+    contract:
+      method: GET
+      path: /api/notifications
+      request: "none"
+      response: "{summary: assigned_today/open_cases/due_today/overdue, notifications: account-owned open cases}"
+      error: "401 unauthenticated"
+      auth: "current-user session"
+    target_contract:
+      method: "Preserve account-scoped GET /api/notifications"
+      notes: "Deadline values are ISO timestamps."
+    semantic_divergence: []
+  - name: catalog-search
+    unit: api-workflows
+    type: rest
+    stability: must_preserve
+    source_loc: "backend/main.py:356"
+    contract:
+      method: "GET"
+      path: "/api/codes, /api/catalogs"
+      request: "q, limit, offset query parameters"
+      response: "catalog record page or catalog counts"
+      error: "401 unauthenticated; empty code list without a search query"
+      auth: "current-user session"
+    target_contract:
+      method: "Preserve GET /api/codes and GET /api/catalogs; extend records with sourced coding instructions"
+      notes: "Search page size is capped at 100."
+    semantic_divergence: []
+  - name: workflow-and-activity
+    unit: api-workflows
+    type: rest
+    stability: may_change
+    source_loc: "backend/main.py:372"
+    contract:
+      method: GET
+      path: "/api/agents, /api/activity"
+      request: "none"
+      response: "workflow stage list or account activity list"
+      error: "401 unauthenticated"
+      auth: "current-user session"
+    target_contract:
+      method: "Preserve authenticated workflow and activity endpoints unless the UI/API version changes together"
+      notes: "Activity is limited to the most recent 50 records."
+    semantic_divergence: []
+  - name: coding-reference-files
+    unit: catalog-preparation
+    type: file
+    stability: must_preserve
+    source_loc: "scripts/prepare_data.py:14"
+    contract:
+      method: "CLI"
+      path: "CMS ICD-10-CM code-description sources, ICD tabular/index archives, and HCPCS workbooks"
+      request: "local source directory"
+      response: "versioned JSON catalogs under data/coding/"
+      error: "nonzero exit for invalid source folder or unsupported inputs"
+      auth: "local operator"
+    target_contract:
+      method: "Versioned, deterministic importer that records source year and preserves official instruction text"
+      notes: "Avoid unsupported re-distribution of source data."
+    semantic_divergence: []
+  - name: synthetic-evaluation-data
+    unit: synthea-demo-seeding
+    type: file
+    stability: may_change
+    source_loc: "scripts/seed_synthea_demo.py:22"
+    contract:
+      method: "CLI"
+      path: "Synthea conditions.csv"
+      request: "local CSV folder"
+      response: "synthetic cases assigned across demo coder accounts"
+      error: "nonzero error if the source cannot be read or demo accounts already exist"
+      auth: "local operator"
+    target_contract:
+      method: "Repeatable, explicit synthetic-data importer with privacy-minimized case fields"
+      notes: "Synthea output is synthetic and is not, by itself, a clinically adjudicated coding gold standard."
+    semantic_divergence: []

@@ -1,0 +1,27 @@
+unit: synthea-demo-seeding
+side_effects:
+  - source_loc: "scripts/seed_synthea_demo.py:77"
+    effect: "creates demo coder accounts, synthetic cases, and activity records in SQLite"
+    must_preserve: true
+branches:
+  - source_loc: "scripts/seed_synthea_demo.py:50"
+    condition: "one or more demo email accounts already exist"
+    behavior: "refuse to reset credentials or add another duplicate demo dataset"
+    must_preserve: true
+  - source_loc: "scripts/seed_synthea_demo.py:23"
+    condition: "condition file has fewer encounter records than requested"
+    behavior: "raise an explicit ValueError"
+    must_preserve: true
+error_paths:
+  - source_loc: "scripts/seed_synthea_demo.py:43"
+    trigger: "source CSV directory argument is omitted"
+    outcome: "print usage to stderr and return exit code 2"
+    contract: "CLI exit code 2"
+    must_preserve: true
+concurrency:
+  model: sync
+  tx_boundary:
+    source_loc: "scripts/seed_synthea_demo.py:77"
+    scope: "all demo users, their cases, and activity rows are inserted inside one connection transaction"
+    isolation: "SQLite default transaction behavior"
+    must_preserve: true

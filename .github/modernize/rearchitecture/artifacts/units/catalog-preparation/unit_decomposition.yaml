@@ -1,0 +1,10 @@
+unit: catalog-preparation
+commit: false
+candidate_splits:
+  - id: "scripts/prepare_data.py:27-121"
+    drivers: [concern_split, reuse_split]
+    rationale: >
+      XLSX decoding, HCPCS normalization, and ICD-10-CM text parsing are
+      independent format-specific import concerns that can be validated
+      separately while retaining a common versioned-output convention.
+    source_slice: {file: scripts/prepare_data.py, lines: [27, 121]}

@@ -1,0 +1,15 @@
+unit: web-client
+bindings:
+  - type: "convention"
+    name: "HTML ids and data-page/data-action attributes"
+    source_loc: "frontend/index.html:24"
+    target: "frontend/app.js event handlers and query selectors"
+    must_appear_in_target: true
+    notes: "The JS and HTML form one static single-page application."
+  - type: "route-declaration"
+    name: "Client page identifiers: dashboard, analysis, cases, knowledge, agents, activity, settings, result"
+    source_loc: "frontend/app.js:1"
+    target: "showPage()"
+    must_appear_in_target: true
+    notes: "Navigation is client-side; FastAPI serves the same index for paths."
+runtime_config: []

@@ -1,0 +1,38 @@
+{
+  "dataset_version": "medibridge-synthetic-demo-v1",
+  "description": "Small illustrative synthetic extraction fixtures; not coder-adjudicated coding ground truth.",
+  "cases": [
+    {
+      "case_id": "demo-context-001",
+      "dataset_version": "medibridge-synthetic-demo-v1",
+      "documented_text": "Synthetic note. Patient has cough. Patient denies fever.",
+      "expected_codes": [],
+      "expected_mentions": [
+        {"text": "cough", "category": "symptom", "assertion": "affirmed", "experiencer": "patient"},
+        {"text": "fever", "category": "symptom", "assertion": "negated", "experiencer": "patient"}
+      ],
+      "adjudication_status": "pending"
+    },
+    {
+      "case_id": "demo-context-002",
+      "dataset_version": "medibridge-synthetic-demo-v1",
+      "documented_text": "Synthetic note. Possible hypertension. History of asthma.",
+      "expected_codes": [],
+      "expected_mentions": [
+        {"text": "hypertension", "category": "diagnosis", "assertion": "uncertain", "experiencer": "patient"},
+        {"text": "asthma", "category": "diagnosis", "assertion": "historical", "experiencer": "patient"}
+      ],
+      "adjudication_status": "pending"
+    },
+    {
+      "case_id": "demo-context-003",
+      "dataset_version": "medibridge-synthetic-demo-v1",
+      "documented_text": "Synthetic note. Patient's mother has diabetes.",
+      "expected_codes": [],
+      "expected_mentions": [
+        {"text": "diabetes", "category": "diagnosis", "assertion": "negated", "experiencer": "family_member"}
+      ],
+      "adjudication_status": "pending"
+    }
+  ]
+}

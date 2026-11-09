@@ -1,0 +1,237 @@
+metadata:
+  generated: "2026-11-09"
+  source_tasks: ".github/modernize/rearchitecture/plan.md"
+  last_updated: "2026-11-09"
+
+summary:
+  total_tasks: 26
+  completed_tasks: 2
+  in_progress_tasks: 2
+  pending_tasks: 22
+  completion_percentage: 7.7
+
+tasks:
+  - task_id: "T001"
+    description: "Define versioned evaluation-case and provenance schemas and synthetic fixtures."
+    status: "in-progress"
+    implementation:
+      files_changed:
+        - file: "backend/schemas.py"
+          changes:
+            - change_type: "modified"
+              description: "Added source evidence and adjudicated evaluation-case validation schemas."
+    verification:
+      build_passed: true
+      test_results:
+        command: ".venv\\Scripts\\python.exe -m pytest -q"
+        passed: 18
+        failed: 0
+        skipped: 0
+        failures: []
+      notes: "Synthetic fixture files and complete versioned evaluation contract are still outstanding."
+    upstream_trace:
+      plan_item: "1.1"
+      requirements: ["REQ-001", "REQ-004", "REQ-011", "REQ-012"]
+      full_trace: "REQ-001/004/011/012 -> Phase-1.1 -> T001 -> backend/schemas.py"
+  - task_id: "T002"
+    description: "Add a documented engineering-only configuration guard and tests."
+    status: "in-progress"
+    implementation:
+      files_changed:
+        - file: "backend/config.py"
+          changes:
+            - change_type: "modified"
+              description: "Added an opt-in clinical analysis approval setting, disabled by default."
+        - file: "backend/main.py"
+          changes:
+            - change_type: "modified"
+              description: "Blocks text/file analysis with HTTP 503 unless approval is enabled and reports the state in health."
+        - file: "compose.yaml"
+          changes:
+            - change_type: "modified"
+              description: "Keeps clinical analysis disabled by default in deployment."
+        - file: ".env.example"
+          changes:
+            - change_type: "modified"
+              description: "Documents the safe local default."
+        - file: ".env.deploy.example"
+          changes:
+            - change_type: "modified"
+              description: "Documents the safe deployment default."
+        - file: "README.md"
+          changes:
+            - change_type: "modified"
+              description: "Documents that enabling analysis requires organizational governance approval."
+    verification:
+      build_passed: true
+      test_results:
+        command: ".venv\\Scripts\\python.exe -m pytest -q"
+        passed: 18
+        failed: 0
+        skipped: 0
+        failures: []
+      notes: "The guard is covered; a durable governance approval record/process is still outstanding."
+    upstream_trace:
+      plan_item: "1.1"
+      requirements: ["REQ-001", "REQ-004", "REQ-011", "REQ-012"]
+      full_trace: "REQ-001/004/011/012 -> Phase-1.1 -> T002 -> backend/config.py, backend/main.py, deployment config"
+  - task_id: "T006"
+    description: "Add bounded PDF and DOCX parsing with source locations."
+    status: "completed"
+    implementation:
+      files_changed:
+        - file: "backend/services/ingestion.py"
+          changes:
+            - change_type: "created"
+              description: "Added bounded text extraction and page/paragraph source offsets."
+        - file: "backend/requirements.txt"
+          changes:
+            - change_type: "modified"
+              description: "Declared pypdf and python-docx."
+        - file: "backend/database.py"
+          changes:
+            - change_type: "modified"
+              description: "Added additive case source-location persistence."
+    verification:
+      build_passed: true
+      test_results:
+        command: ".venv\\Scripts\\python.exe -m pytest -q"
+        passed: 18
+        failed: 0
+        skipped: 0
+        failures: []
+      notes: "Covers valid PDF/DOCX extraction, encrypted/malformed inputs, empty text, source locations, and DOCX expanded-size limit."
+    upstream_trace:
+      plan_item: "4"
+      requirements: ["REQ-006", "REQ-007"]
+      full_trace: "REQ-006/007 -> Phase-2.4 -> T006 -> ingestion parser and source-location persistence"
+  - task_id: "T007"
+    description: "Wire supported document uploads through API/UI and add error-contract tests."
+    status: "completed"
+    implementation:
+      files_changed:
+        - file: "backend/main.py"
+          changes:
+            - change_type: "modified"
+              description: "Wired PDF/DOCX upload parsing, validation, and source-location response."
+        - file: "frontend/index.html"
+          changes:
+            - change_type: "modified"
+              description: "Added PDF/DOCX accepted upload types."
+        - file: "frontend/app.js"
+          changes:
+            - change_type: "modified"
+              description: "Displays source page/paragraph summaries."
+        - file: "tests/test_medicoders.py"
+          changes:
+            - change_type: "modified"
+              description: "Added parser and malformed/empty/encrypted/expanded-limit tests."
+        - file: "tests/test_auth.py"
+          changes:
+            - change_type: "modified"
+              description: "Added authenticated DOCX upload persistence and analysis guard tests."
+    verification:
+      build_passed: true
+      test_results:
+        command: ".venv\\Scripts\\python.exe -m pytest -q"
+        passed: 18
+        failed: 0
+        skipped: 0
+        failures: []
+      notes: "Python compilation and node --check frontend\\app.js also passed."
+    upstream_trace:
+      plan_item: "4"
+      requirements: ["REQ-006", "REQ-007"]
+      full_trace: "REQ-006/007 -> Phase-2.4 -> T007 -> API/UI upload flow and tests"
+
+pending_tasks:
+  - task_id: "T003"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T004"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T005"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T008"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T009"
+    blocked_by: ["T008"]
+    priority: "P1"
+  - task_id: "T010"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T011"
+    blocked_by: ["T010"]
+    priority: "P1"
+  - task_id: "T012"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T013"
+    blocked_by: ["T012"]
+    priority: "P1"
+  - task_id: "T014"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T015"
+    blocked_by: ["T014"]
+    priority: "P1"
+  - task_id: "T016"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T017"
+    blocked_by: ["T016"]
+    priority: "P1"
+  - task_id: "T018"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T019"
+    blocked_by: ["T018"]
+    priority: "P1"
+  - task_id: "T020"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T021"
+    blocked_by: ["T020"]
+    priority: "P1"
+  - task_id: "T022"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T023"
+    blocked_by: ["T022"]
+    priority: "P1"
+  - task_id: "T024"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T025"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "T026"
+    blocked_by: []
+    priority: "P1"
+
+untracked_changes: []
+traceability_chain:
+  - chain_id: "TRACE-REQ-006-007"
+    requirement: "REQ-006/REQ-007"
+    plan_phase: "Phase-2"
+    plan_item: "4"
+    tasks: ["T006", "T007"]
+    files:
+      - "backend/services/ingestion.py"
+      - "backend/main.py"
+      - "backend/database.py"
+      - "frontend/index.html"
+      - "frontend/app.js"
+      - "tests/test_medicoders.py"
+      - "tests/test_auth.py"
+    status: "complete"
+validation:
+  passed: true
+  errors: []
+  warnings:
+    - "The remaining 22 tasks have not been implemented."
+    - "T001 and T002 are in progress and are not counted as complete."
+  blocking_issues: []

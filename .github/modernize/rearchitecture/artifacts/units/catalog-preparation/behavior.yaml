@@ -1,0 +1,22 @@
+unit: catalog-preparation
+side_effects:
+  - source_loc: "scripts/prepare_data.py:185"
+    effect: "creates versioned coding-data directories and writes normalized JSON catalogs"
+    must_preserve: true
+branches:
+  - source_loc: "scripts/prepare_data.py:200"
+    condition: "input directory is absent"
+    behavior: "print an error and exit nonzero"
+    must_preserve: true
+  - source_loc: "scripts/prepare_data.py:205"
+    condition: "source directory contains no supported archive, workbook, or ICD description file"
+    behavior: "print an error and exit nonzero"
+    must_preserve: true
+error_paths:
+  - source_loc: "scripts/prepare_data.py:197"
+    trigger: "source directory does not exist"
+    outcome: "report missing folder to stderr and return exit code 1"
+    contract: "CLI exit code 1"
+    must_preserve: true
+concurrency:
+  model: sync

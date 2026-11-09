@@ -1,0 +1,15 @@
+flows:
+  - name: authenticated-browser-session
+    medium: cookie
+    key: medibridge_session
+    writer:
+      unit: api-workflows
+      source_loc: "backend/main.py:126"
+    reader:
+      unit: web-client
+      source_loc: "frontend/app.js:315"
+    pairing: matched
+    must_preserve: true
+    must_confirm: null
+    verification_hint: "Sign in in a browser and verify protected API requests work; sign out and verify session removal."
+    notes: "The browser sends the HTTP-only session cookie on same-origin API requests; JavaScript does not read the cookie."

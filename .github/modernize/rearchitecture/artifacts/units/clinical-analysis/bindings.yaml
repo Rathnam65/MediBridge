@@ -1,0 +1,4 @@
+unit: clinical-analysis
+bindings: []
+reason: "Pure Python in-process functions; imported directly by the API and synthetic-data seeder."
+runtime_config: []

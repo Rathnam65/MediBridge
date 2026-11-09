@@ -1,0 +1,77 @@
+batch_id: "B02"
+completed_tasks: ["T006", "T007"]
+blocked_tasks: []
+files_changed:
+  T001:
+    - file: "backend/schemas.py"
+      change_type: "modified"
+      description: "Added source evidence and adjudicated evaluation-case schemas; synthetic fixtures remain."
+  T002:
+    - file: "backend/config.py"
+      change_type: "modified"
+      description: "Added an opt-in clinical analysis approval flag, off by default."
+    - file: "backend/main.py"
+      change_type: "modified"
+      description: "Blocks text and document analysis while approval is disabled."
+    - file: "compose.yaml"
+      change_type: "modified"
+      description: "Deployments default to analysis disabled."
+    - file: "README.md"
+      change_type: "modified"
+      description: "Documents the governance gate; durable approval recording remains outstanding."
+  T006:
+    - file: "backend/services/ingestion.py"
+      change_type: "created"
+      description: "Extracts PDF/DOCX text with bounded processing and source locations."
+    - file: "backend/requirements.txt"
+      change_type: "modified"
+      description: "Declares the selected PDF and DOCX parsers."
+    - file: "backend/database.py"
+      change_type: "modified"
+      description: "Persists source-location metadata."
+  T007:
+    - file: "backend/main.py"
+      change_type: "modified"
+      description: "Integrates upload extraction, validation, and result locations."
+    - file: "frontend/index.html"
+      change_type: "modified"
+      description: "Accepts PDF and DOCX."
+    - file: "frontend/app.js"
+      change_type: "modified"
+      description: "Shows extracted source-location summaries."
+    - file: "tests/test_medicoders.py"
+      change_type: "modified"
+      description: "Tests parsing and document error contracts."
+    - file: "tests/test_auth.py"
+      change_type: "modified"
+      description: "Tests authenticated upload persistence and disabled analysis."
+traceability:
+  - requirement: "REQ-006/REQ-007"
+    plan_item: "4"
+    task: "T006/T007"
+    files: ["backend/services/ingestion.py", "backend/main.py", "backend/database.py", "frontend/index.html", "frontend/app.js"]
+    status: "completed"
+  - requirement: "REQ-001/REQ-004/REQ-011/REQ-012"
+    plan_item: "1.1"
+    task: "T001/T002"
+    files: ["backend/schemas.py", "backend/config.py", "backend/main.py", "compose.yaml", "README.md"]
+    status: "in-progress"
+protocol_violation: false
+errors: []
+warnings:
+  - "T001 is partial: versioned fixture corpus and complete evaluation contract remain."
+  - "T002 is partial: guard is implemented, but governance approval recording is external and not implemented."
+  - "Local inference, RAG, clinical context NLP, full Synthea, complete ICD tabular rules, HCPCS validation, and evaluation remain unimplemented."
+test_results:
+  T006:
+    command: ".venv\\Scripts\\python.exe -m pytest -q"
+    passed: 18
+    failed: 0
+    skipped: 0
+    failures: []
+  T007:
+    command: ".venv\\Scripts\\python.exe -m pytest -q; .venv\\Scripts\\python.exe -m compileall -q backend scripts tests; node --check frontend\\app.js"
+    passed: 18
+    failed: 0
+    skipped: 0
+    failures: []

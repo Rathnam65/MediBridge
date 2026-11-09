@@ -1,0 +1,16 @@
+unit: api-workflows
+commit: false
+candidate_splits:
+  - id: "backend/main.py:65-146"
+    drivers: [concern_split, reuse_split]
+    rationale: >
+      Authentication/session handling, workspace persistence, case serialization,
+      password hashing, and scheduling helpers are mixed into the HTTP module and
+      can change independently from route definitions.
+    source_slice: {file: backend/main.py, lines: [65, 146]}
+  - id: "backend/main.py:318-354"
+    drivers: [concern_split, data_ownership_split]
+    rationale: >
+      Analysis ingestion, case persistence, coder decisions, and activity writes
+      form a distinct workflow with its own validation and persistence behavior.
+    source_slice: {file: backend/main.py, lines: [318, 354]}

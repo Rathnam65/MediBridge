@@ -1,0 +1,23 @@
+unit: clinical-analysis
+side_effects: []
+branches:
+  - source_loc: "backend/services/pipeline.py:11"
+    condition: "catalog file cannot be read, is invalid JSON, or is not a JSON array"
+    behavior: "raise an explicit RuntimeError identifying the catalog"
+    must_preserve: true
+  - source_loc: "backend/services/pipeline.py:21"
+    condition: "text contains a recognized term and negation is not detected"
+    behavior: "add a catalog-matched recommendation with evidence and phrase-overlap score"
+    must_preserve: true
+  - source_loc: "backend/services/pipeline.py:55"
+    condition: "no supported recommendation exists"
+    behavior: "return a review gap and zero score; do not invent a code"
+    must_preserve: true
+error_paths:
+  - source_loc: "backend/services/pipeline.py:10"
+    trigger: "catalog file missing or unreadable"
+    outcome: "RuntimeError during catalog load"
+    contract: "application startup fails rather than silently using an empty catalog"
+    must_preserve: true
+concurrency:
+  model: sync

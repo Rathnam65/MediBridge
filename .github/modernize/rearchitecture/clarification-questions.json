@@ -1,0 +1,471 @@
+{
+  "schema": "clarification-questions/v1",
+  "generated_at": "2026-11-09T05:25:56Z",
+  "user_input": "Execute the existing rearchitecture plan at C:\\Users\\rathn\\OneDrive\\Desktop\\Major Project\\MediBridge\\.github\\modernize\\rearchitecture\\plan.md in workspace C:\\Users\\rathn\\OneDrive\\Desktop\\Major Project\\MediBridge. Implement one coherent, verifiable batch (and more only if feasible), add tests, run the existing suite, and report exact completed/blocked task IDs and changed files. Respect research.md: local inference/embeddings only; real PHI/production blocked pending governance; human coder decision required; Synthea is synthetic, not gold truth. Do not claim clinical accuracy or coder approvals, add credentials/real PHI, or fake unavailable dependencies/infrastructure. Follow task dependencies and explicitly report blockers.",
+  "title": "MediBridge Rearchitecture Plan Execution",
+  "assessment_snapshot": {
+    "intro": "The workspace scan identifies a small full-stack healthcare application with:",
+    "bullets": [
+      "Python backend/server components and a JavaScript frontend are present.",
+      "The named plan and research artifacts are under .github/modernize/rearchitecture/.",
+      "User constraints permit local inference and embeddings only; real PHI and production use remain blocked pending governance."
+    ]
+  },
+  "proposed_outcome": "Implement one dependency-complete, coherent batch from the existing rearchitecture plan in the current workspace, add tests, run the existing suite, and report exact task IDs, changed files, and blockers without making clinical-accuracy or coder-approval claims.",
+  "scope": [
+    "frontend",
+    "backend",
+    "generic"
+  ],
+  "status": "awaiting_answers",
+  "questions": [
+    {
+      "id": "F1",
+      "kit": "frontend",
+      "field": "target.framework",
+      "title": "Target frontend framework",
+      "question": "Which frontend framework and version should the existing plan's implementation target?",
+      "importance": "required",
+      "impact": 5,
+      "recommended": "Use the target framework/version already specified in plan.md",
+      "default": null,
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "Use the target framework/version already specified in plan.md",
+          "label": "Use the target framework/version already specified in plan.md"
+        },
+        {
+          "value": "Keep the current frontend framework",
+          "label": "Keep the current frontend framework"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "F2",
+      "kit": "frontend",
+      "field": "target.component_library",
+      "title": "Component library",
+      "question": "Which UI/component library should be used? If plan.md specifies one, confirm that choice.",
+      "importance": "required",
+      "impact": 4,
+      "recommended": "Use the component library specified in plan.md",
+      "default": null,
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "Use the component library specified in plan.md",
+          "label": "Use the component library specified in plan.md"
+        },
+        {
+          "value": "Keep the existing component/library choices",
+          "label": "Keep the existing component/library choices"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "F3",
+      "kit": "frontend",
+      "field": "visual.screenshots",
+      "title": "Current UI references",
+      "question": "Provide screenshot/screen-recording paths or URLs for the current UI, or state that none are available and the implementation should rely only on existing application behavior and assets.",
+      "importance": "required",
+      "impact": 5,
+      "recommended": null,
+      "default": null,
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "F4",
+      "kit": "frontend",
+      "field": "visual.design_system",
+      "title": "Design system",
+      "question": "What design system or token source should guide the UI?",
+      "importance": "required",
+      "impact": 4,
+      "recommended": null,
+      "default": "match existing pixel-by-pixel using extracted CSS custom properties",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "F5",
+      "kit": "frontend",
+      "field": "compliance.accessibility",
+      "title": "Accessibility standard",
+      "question": "Which accessibility standard should the frontend target?",
+      "importance": "recommended",
+      "impact": 3,
+      "recommended": "WCAG 2.1 AA",
+      "default": "WCAG 2.1 AA",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "WCAG 2.1 AA",
+          "label": "WCAG 2.1 AA"
+        },
+        {
+          "value": "WCAG 2.2 AA",
+          "label": "WCAG 2.2 AA"
+        },
+        {
+          "value": "None / not required",
+          "label": "None / not required"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "F6",
+      "kit": "frontend",
+      "field": "compatibility.browsers",
+      "title": "Browser targets",
+      "question": "Which browser/runtime targets must be supported?",
+      "importance": "recommended",
+      "impact": 2,
+      "recommended": null,
+      "default": "modern evergreen (Chrome, Firefox, Safari, Edge — latest 2 major versions)",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "F7",
+      "kit": "frontend",
+      "field": "responsive.breakpoints",
+      "title": "Responsive strategy",
+      "question": "What responsive or breakpoint strategy should be preserved or introduced?",
+      "importance": "recommended",
+      "impact": 2,
+      "recommended": null,
+      "default": "mobile-first using existing breakpoints detected from codebase",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "F8",
+      "kit": "frontend",
+      "field": "i18n.locales",
+      "title": "Locales",
+      "question": "Which locales are in scope?",
+      "importance": "optional",
+      "impact": 1,
+      "recommended": null,
+      "default": "preserve current locales; keep existing i18n library if present",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "F9",
+      "kit": "frontend",
+      "field": "state_mgmt.preference",
+      "title": "State management",
+      "question": "Which client-side state-management approach should be used?",
+      "importance": "optional",
+      "impact": 1,
+      "recommended": null,
+      "default": "preserve existing pattern if identifiable; otherwise recommend minimal (component state + server-state library)",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "F10",
+      "kit": "frontend",
+      "field": "routing.preference",
+      "title": "Routing strategy",
+      "question": "Which routing library or strategy should be used?",
+      "importance": "optional",
+      "impact": 1,
+      "recommended": null,
+      "default": "use the de-facto router for the chosen target framework",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "B1",
+      "kit": "backend",
+      "field": "target.framework",
+      "title": "Target backend framework",
+      "question": "Which backend framework and version should the existing plan's implementation target?",
+      "importance": "required",
+      "impact": 5,
+      "recommended": "Use the target framework/version already specified in plan.md",
+      "default": null,
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "Use the target framework/version already specified in plan.md",
+          "label": "Use the target framework/version already specified in plan.md"
+        },
+        {
+          "value": "Keep the current backend framework",
+          "label": "Keep the current backend framework"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "B2",
+      "kit": "backend",
+      "field": "api.contract_preservation",
+      "title": "API compatibility",
+      "question": "What API contract preservation policy should be used?",
+      "importance": "required",
+      "impact": 5,
+      "recommended": "must preserve",
+      "default": "must preserve",
+      "prefilled": true,
+      "prefilled_value": "must preserve",
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "must preserve",
+          "label": "Must preserve existing contracts"
+        },
+        {
+          "value": "can break with versioning",
+          "label": "Breaking changes allowed with versioning"
+        },
+        {
+          "value": "can break",
+          "label": "Breaking changes allowed"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "B3",
+      "kit": "backend",
+      "field": "data.migration_strategy",
+      "title": "Data migration",
+      "question": "What data/database migration strategy should be followed?",
+      "importance": "required",
+      "impact": 5,
+      "recommended": "TBD / assess in research phase",
+      "default": "TBD / assess in research phase",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "in-place",
+          "label": "In place"
+        },
+        {
+          "value": "dual-write",
+          "label": "Dual write"
+        },
+        {
+          "value": "new schema",
+          "label": "New schema with ETL"
+        },
+        {
+          "value": "no migration",
+          "label": "No database migration"
+        },
+        {
+          "value": "TBD / assess in research phase",
+          "label": "Defer to the research phase"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "B4",
+      "kit": "backend",
+      "field": "auth.framework",
+      "title": "Authentication",
+      "question": "Which authentication/authorization framework or policy should be used?",
+      "importance": "recommended",
+      "impact": 3,
+      "recommended": null,
+      "default": "preserve existing auth mechanism; detect from codebase",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "B5",
+      "kit": "backend",
+      "field": "nfr.sla",
+      "title": "Service-level targets",
+      "question": "What latency, throughput, or availability targets apply?",
+      "importance": "recommended",
+      "impact": 2,
+      "recommended": null,
+      "default": "match current production baseline; no regression",
+      "prefilled": false,
+      "prefilled_value": null,
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "G1",
+      "kit": "generic",
+      "field": "success.definition",
+      "title": "Definition of done",
+      "question": "What measurable outcome defines success for this work?",
+      "importance": "required",
+      "impact": 5,
+      "recommended": null,
+      "default": "feature parity with the current system; all existing user-facing behaviors preserved",
+      "prefilled": true,
+      "prefilled_value": "Implement one coherent, verifiable dependency-complete batch from the existing plan (and additional batches only if feasible), add tests, run the existing test suite, and report exact completed/blocked task IDs and changed files. Do not claim clinical accuracy or coder approvals.",
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "G2",
+      "kit": "generic",
+      "field": "out_of_scope",
+      "title": "Out-of-scope boundaries",
+      "question": "What must remain explicitly out of scope?",
+      "importance": "recommended",
+      "impact": 4,
+      "recommended": null,
+      "default": "no explicit exclusions; agent will infer from project structure",
+      "prefilled": true,
+      "prefilled_value": "Real PHI and production use pending governance; clinical accuracy claims or coder approval claims; adding credentials or real PHI; external inference or embedding services; representing Synthea as gold truth; fabricating unavailable dependencies or infrastructure.",
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "G3",
+      "kit": "generic",
+      "field": "existing_tests.posture",
+      "title": "Existing test policy",
+      "question": "How should the existing test suite be treated?",
+      "importance": "recommended",
+      "impact": 4,
+      "recommended": "must pass",
+      "default": "must pass",
+      "prefilled": true,
+      "prefilled_value": "must pass",
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "must pass",
+          "label": "Must pass"
+        },
+        {
+          "value": "can rewrite",
+          "label": "May be rewritten with equivalent coverage"
+        },
+        {
+          "value": "ignore",
+          "label": "Ignore and write new tests"
+        },
+        {
+          "value": "partial: existing suite should be run and failures reported",
+          "label": "Run it and report any failures"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "G4",
+      "kit": "generic",
+      "field": "target.output_location",
+      "title": "Rewrite output location",
+      "question": "Should the work modify the current workspace in place or use another output path?",
+      "importance": "required",
+      "impact": 4,
+      "recommended": "in-place",
+      "default": "new sibling directory: MediBridge-new",
+      "prefilled": true,
+      "prefilled_value": "in-place",
+      "answer": null,
+      "depends_on": null,
+      "options": [
+        {
+          "value": "in-place",
+          "label": "In place in the current workspace"
+        },
+        {
+          "value": "new sibling directory: MediBridge-new",
+          "label": "New sibling directory: MediBridge-new"
+        }
+      ],
+      "allow_other": true,
+      "type": "single_select"
+    },
+    {
+      "id": "G5",
+      "kit": "generic",
+      "field": "constraints.additional",
+      "title": "Additional constraints",
+      "question": "Confirm or edit additional requirements and constraints.",
+      "importance": "optional",
+      "impact": 5,
+      "recommended": null,
+      "default": "None beyond the decisions listed in this specification.",
+      "prefilled": true,
+      "prefilled_value": "Local inference and embeddings only; real PHI and production use are blocked pending governance; human coder decision is required; Synthea is synthetic, not gold truth; no clinical accuracy or coder approval claims; do not add credentials or real PHI; do not fake unavailable dependencies or infrastructure.",
+      "answer": null,
+      "depends_on": null,
+      "type": "text",
+      "options": []
+    }
+  ]
+}

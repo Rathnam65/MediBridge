@@ -1,0 +1,109 @@
+metadata:
+  generated: "2026-11-09"
+  source_plan: ".github/modernize/rearchitecture/plan.md"
+  target_tasks: ".github/modernize/rearchitecture/plan.md (inline task breakdown)"
+summary:
+  total_plan_items: 15
+  covered_plan_items: 15
+  missing_plan_items: 0
+  coverage_percentage: 100.0
+  total_tasks_generated: 26
+  orphan_tasks: 0
+phases:
+  - phase_id: "Phase-1"
+    phase_name: "Foundation and engineering-only safeguards"
+    items:
+      - item_id: "1.1"
+        tasks: [T001, T002]
+      - item_id: "1.2"
+        tasks: [T003, T004]
+      - item_id: "1.3"
+        tasks: [T005]
+  - phase_id: "Phase-2"
+    phase_name: "Clinical documents and synthetic corpus"
+    items:
+      - item_id: "4"
+        tasks: [T006, T007]
+      - item_id: "5"
+        tasks: [T008, T009]
+      - item_id: "6"
+        tasks: [T010, T011]
+  - phase_id: "Phase-3"
+    phase_name: "Coding knowledge and retrieval"
+    items:
+      - item_id: "7"
+        tasks: [T012, T013]
+      - item_id: "8"
+        tasks: [T014, T015]
+      - item_id: "9"
+        tasks: [T016, T017]
+      - item_id: "10"
+        tasks: [T018, T019]
+  - phase_id: "Phase-4"
+    phase_name: "Orchestrated coder-assistance workflow"
+    items:
+      - item_id: "11"
+        tasks: [T020, T021]
+      - item_id: "12"
+        tasks: [T022, T023]
+  - phase_id: "Phase-5"
+    phase_name: "Evaluation and release gating"
+    items:
+      - item_id: "13"
+        tasks: [T024]
+      - item_id: "14"
+        tasks: [T025]
+      - item_id: "15"
+        tasks: [T026]
+missing_plan_items: []
+orphan_tasks: []
+upstream_trace:
+  - plan_item: "1.1"
+    source_requirements: [REQ-001, REQ-004, REQ-011, REQ-012]
+    tasks: [T001, T002]
+  - plan_item: "1.2"
+    source_requirements: [REQ-001, REQ-004]
+    tasks: [T003, T004]
+  - plan_item: "1.3"
+    source_requirements: [REQ-002, REQ-005, REQ-011]
+    tasks: [T005]
+  - plan_item: "4"
+    source_requirements: [REQ-006, REQ-007]
+    tasks: [T006, T007]
+  - plan_item: "5"
+    source_requirements: [REQ-005]
+    tasks: [T008, T009]
+  - plan_item: "6"
+    source_requirements: [REQ-008, REQ-011]
+    tasks: [T010, T011]
+  - plan_item: "7"
+    source_requirements: [REQ-009]
+    tasks: [T012, T013]
+  - plan_item: "8"
+    source_requirements: [REQ-010]
+    tasks: [T014, T015]
+  - plan_item: "9"
+    source_requirements: [REQ-004]
+    tasks: [T016, T017]
+  - plan_item: "10"
+    source_requirements: [REQ-003, REQ-004, REQ-009, REQ-010]
+    tasks: [T018, T019]
+  - plan_item: "11"
+    source_requirements: [REQ-001, REQ-002, REQ-003, REQ-005, REQ-009, REQ-010]
+    tasks: [T020, T021]
+  - plan_item: "12"
+    source_requirements: [REQ-001, REQ-002, REQ-003, REQ-005, REQ-009, REQ-010]
+    tasks: [T022, T023]
+  - plan_item: "13"
+    source_requirements: [REQ-011]
+    tasks: [T024]
+  - plan_item: "14"
+    source_requirements: [REQ-012]
+    tasks: [T025]
+  - plan_item: "15"
+    source_requirements: [REQ-011, REQ-012]
+    tasks: [T026]
+validation:
+  passed: true
+  errors: []
+  warnings: []

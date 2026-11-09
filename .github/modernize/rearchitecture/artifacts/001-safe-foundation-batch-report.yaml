@@ -1,0 +1,118 @@
+batch_id: "organization-tenancy-safe-foundation"
+completed_tasks:
+  - "001-baseline-and-preservation-tests"
+blocked_tasks:
+  - task_id: "002-sqlalchemy-alembic-postgresql-foundation"
+    reason: "Not started in this bounded pass; SQLAlchemy/Alembic and a PostgreSQL test path are absent, while live migration scope/target remain unresolved."
+    required_task_ids: []
+  - task_id: "003-organization-membership-and-rbac"
+    reason: "Depends on the unimplemented persistence foundation and requires explicit tenant models and authorization contracts."
+    required_task_ids:
+      - "002-sqlalchemy-alembic-postgresql-foundation"
+  - task_id: "004-invitations-admin-lifecycle-and-password-recovery"
+    reason: "Depends on unimplemented organization membership and RBAC."
+    required_task_ids:
+      - "003-organization-membership-and-rbac"
+  - task_id: "005-multi-factor-authentication"
+    reason: "Depends on unimplemented invitation/account lifecycle; factor and policy remain unresolved."
+    required_task_ids:
+      - "004-invitations-admin-lifecycle-and-password-recovery"
+  - task_id: "006-research-and-hospital-access-gates"
+    reason: "Full tenant and research/hospital authorization is not implemented; only the clinical gate was fail-closed."
+    required_task_ids:
+      - "005-multi-factor-authentication"
+  - task_id: "007-hospital-case-assignment"
+    reason: "Depends on the unimplemented research/hospital access model."
+    required_task_ids:
+      - "006-research-and-hospital-access-gates"
+  - task_id: "008-cross-cutting-regression-and-migration-tests"
+    reason: "Depends on unimplemented tenant, lifecycle, MFA, and assignment features."
+    required_task_ids:
+      - "007-hospital-case-assignment"
+  - task_id: "009-documentation-and-package-hygiene"
+    reason: "Deferred until the implementation contracts and database target are established."
+    required_task_ids:
+      - "008-cross-cutting-regression-and-migration-tests"
+files_changed:
+  "001-baseline-and-preservation-tests":
+    - file: "backend/database.py"
+      change_type: "modified"
+      description: "Refuse ambiguous legacy settings initialization before schema changes instead of dropping a table."
+    - file: "tests/conftest.py"
+      change_type: "created"
+      description: "Set isolated application database, retrieval index, and fail-closed release paths before imports."
+    - file: "tests/test_data_safety.py"
+      change_type: "created"
+      description: "Verify isolated paths and preserve both tables in a synthetic ambiguous-schema fixture."
+    - file: "tests/test_auth.py"
+      change_type: "modified"
+      description: "Verify authentication, clinical gate, and synthetic demo preservation behavior."
+    - file: "tests/test_medicoders.py"
+      change_type: "modified"
+      description: "Characterize the fail-closed release gate when organization approval is unavailable."
+  "006-research-and-hospital-access-gates":
+    - file: "backend/config.py"
+      change_type: "modified"
+      description: "Keep clinical processing disabled until organization-scoped approval enforcement exists."
+    - file: "tests/test_auth.py"
+      change_type: "modified"
+      description: "Verify complete release evidence still yields 503 and no case persistence without organization approval."
+upstream_artifacts_consumed:
+  "001-baseline-and-preservation-tests":
+    - artifact: ".github/modernize/organization-tenancy/plan.md"
+      used_for: "Data preservation and non-destructive execution constraints."
+    - artifact: ".github/modernize/organization-tenancy/.metadata/tasks.json"
+      used_for: "Task 001 acceptance criteria."
+  "006-research-and-hospital-access-gates":
+    - artifact: ".github/modernize/organization-tenancy/.metadata/tasks.json"
+      used_for: "Preserve the release evidence gate and deny clinical analysis until access controls exist."
+evidence_mapping:
+  "001-baseline-and-preservation-tests":
+    - upstream: ".github/modernize/organization-tenancy/.metadata/tasks.json#001-baseline-and-preservation-tests"
+      output: "tests/conftest.py; tests/test_data_safety.py; backend/database.py"
+      evidence: "Full regression suite passed; synthetic conflict test confirmed both settings tables remained intact."
+    - upstream: ".github/modernize/organization-tenancy/plan.md#Scope and guardrails"
+      output: "Resident database/data paths"
+      evidence: "File sizes and timestamps were identical before and after tests; file contents were not read."
+  "006-research-and-hospital-access-gates":
+    - upstream: ".github/modernize/organization-tenancy/.metadata/tasks.json#006-research-and-hospital-access-gates"
+      output: "backend/config.py; tests/test_auth.py"
+      evidence: "Complete release evidence without organization approval kept clinical analysis disabled; route returned 503 and persisted zero cases."
+traceability:
+  - requirement: "Capture current behavior and establish non-destructive test safeguards."
+    plan_item: "001-baseline-and-preservation-tests"
+    task: "001-baseline-and-preservation-tests"
+    files:
+      - "backend/database.py"
+      - "tests/conftest.py"
+      - "tests/test_data_safety.py"
+      - "tests/test_auth.py"
+      - "tests/test_medicoders.py"
+    status: "completed"
+  - requirement: "Fail closed when organization-scoped clinical approval cannot be enforced."
+    plan_item: "006-research-and-hospital-access-gates"
+    task: "006-research-and-hospital-access-gates"
+    files:
+      - "backend/config.py"
+      - "tests/test_auth.py"
+      - "tests/test_medicoders.py"
+    status: "partial"
+protocol_violation: false
+errors: []
+warnings:
+  - "No Git repository metadata was available."
+  - "SQLAlchemy and Alembic are not installed; no PostgreSQL runtime or migration was attempted."
+  - "backend/database.py still has other automatic additive/rename migrations that were not tested against resident data."
+test_results:
+  "001-baseline-and-preservation-tests":
+    command: ".\\.venv\\Scripts\\python.exe -m pytest -q"
+    passed: 38
+    failed: 0
+    skipped: 0
+    failures: []
+  "006-research-and-hospital-access-gates":
+    command: ".\\.venv\\Scripts\\python.exe -m pytest -q tests/test_data_safety.py tests/test_auth.py::test_clinical_analysis_is_disabled_without_explicit_approval tests/test_auth.py::test_complete_release_evidence_still_cannot_bypass_missing_org_approval tests/test_auth.py::test_synthetic_production_mode_overrides_clinical_approval tests/test_auth.py::test_public_synthetic_inputs_are_ephemeral_and_require_confirmation tests/test_medicoders.py::test_release_gate_requires_every_referenced_approval_and_opt_in"
+    passed: 8
+    failed: 0
+    skipped: 0
+    failures: []

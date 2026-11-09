@@ -1,0 +1,33 @@
+unit: api-workflows
+bindings:
+  - type: "route-declaration"
+    name: "FastAPI routes: /api/auth/*, /api/cases*, /api/analyze/*, /api/workspace, /api/codes, /api/catalogs, /api/notifications, /api/activity, /api/health"
+    source_loc: "backend/main.py:148"
+    target: "FastAPI app"
+    must_appear_in_target: true
+    notes: "Protected routes use Depends(current_user); the static SPA is served by a catch-all route."
+  - type: "filter"
+    name: "security_headers"
+    source_loc: "backend/main.py:42"
+    target: "HTTP middleware"
+    must_appear_in_target: true
+    notes: "Enforces mutating-request origin checks and response security/cache headers."
+runtime_config:
+  - key: "DATABASE_PATH"
+    source_loc: "backend/config.py:11"
+    source: "env"
+    default_value: "database/medibridge.db"
+    must_appear_in_target: true
+    notes: "Selects SQLite database file."
+  - key: "APP_ENV"
+    source_loc: "backend/config.py:18"
+    source: "env"
+    default_value: "development"
+    must_appear_in_target: true
+    notes: "Controls production cookie/security headers and API documentation."
+  - key: "ALLOWED_ORIGINS"
+    source_loc: "backend/config.py:23"
+    source: "env"
+    default_value: "localhost development origins"
+    must_appear_in_target: true
+    notes: "Controls CORS and mutation origin policy."

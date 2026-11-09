@@ -1,0 +1,8 @@
+{
+  "clinical_governance": {"approved": false, "reference": ""},
+  "privacy_security_review": {"approved": false, "reference": ""},
+  "clinician_signoff": {"approved": false, "reference": ""},
+  "local_model_verified": {"approved": false, "reference": ""},
+  "evaluation_passed": {"approved": false, "reference": ""},
+  "retention_backup_review": {"approved": false, "reference": ""}
+}

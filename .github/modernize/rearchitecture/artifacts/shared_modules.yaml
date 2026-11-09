@@ -1,0 +1,37 @@
+modules:
+  - name: sqlite-database
+    kind: store
+    source_loc: "backend/database.py:8"
+    used_by_units: [api-workflows, synthea-demo-seeding]
+    fields:
+      - name: conn
+        type: "function() -> sqlite3.Connection"
+      - name: init_db
+        type: "function() -> None"
+      - name: users
+        type: "SQLite table"
+      - name: cases
+        type: "SQLite table"
+      - name: activity
+        type: "SQLite table"
+      - name: settings
+        type: "SQLite table"
+    god_class: false
+    split_candidate: false
+    migration_strategy: wrap
+    notes: "Direct sqlite3 access and additive schema changes are shared by HTTP workflows and the demo seeder."
+  - name: clinical-analysis-service
+    kind: utility
+    source_loc: "backend/services/pipeline.py:6"
+    used_by_units: [api-workflows, synthea-demo-seeding]
+    fields:
+      - name: CODES
+        type: "list[tuple[str, str, str, str]]"
+      - name: analyze_text
+        type: "function(text) -> analysis result"
+      - name: load_reference_codes
+        type: "function(coding_dir) -> catalog records"
+    god_class: false
+    split_candidate: true
+    migration_strategy: split
+    notes: "Catalog loading, rule-based NLP, retrieval, and validation are currently co-located; gap work spans distinct concerns."

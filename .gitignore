@@ -1,0 +1,13 @@
+.venv/
+.venv-*/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+release-approvals.json
+uploads/*
+!uploads/.gitkeep

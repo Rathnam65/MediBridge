@@ -1,0 +1,50 @@
+unit: api-workflows
+side_effects:
+  - source_loc: "backend/main.py:106"
+    effect: "initializes/upgrades the SQLite schema during application import"
+    must_preserve: true
+  - source_loc: "backend/main.py:165"
+    effect: "creates user account and a hashed expiring authentication session"
+    must_preserve: true
+  - source_loc: "backend/main.py:318"
+    effect: "persists analyzed text and separate account activity"
+    must_preserve: true
+  - source_loc: "backend/main.py:349"
+    effect: "updates only a case owned by the authenticated user and records activity"
+    must_preserve: true
+branches:
+  - source_loc: "backend/main.py:43"
+    condition: "unsafe cross-origin mutation request"
+    behavior: "return HTTP 403 before dispatch"
+    must_preserve: true
+  - source_loc: "backend/main.py:133"
+    condition: "session cookie absent, expired, or unknown"
+    behavior: "protected API operation returns HTTP 401"
+    must_preserve: true
+  - source_loc: "backend/main.py:329"
+    condition: "uploaded suffix is not TXT, JSON, Markdown, CSV, or LOG"
+    behavior: "return HTTP 400"
+    must_preserve: true
+  - source_loc: "backend/main.py:332"
+    condition: "uploaded document exceeds 10 MB"
+    behavior: "return HTTP 413"
+    must_preserve: true
+error_paths:
+  - source_loc: "backend/main.py:178"
+    trigger: "duplicate account email"
+    outcome: "HTTP 409 account-already-exists response"
+    contract: "HTTP 409"
+    must_preserve: true
+  - source_loc: "backend/main.py:287"
+    trigger: "case missing or not owned by current user"
+    outcome: "HTTP 404"
+    contract: "HTTP 404; do not disclose another user's case"
+    must_preserve: true
+concurrency:
+  model: event-loop
+  tx_boundary:
+    source_loc: "backend/main.py:177"
+    scope: "signup user and session rows are committed together; case and activity writes are separate commits"
+    isolation: "SQLite default transaction behavior"
+    must_preserve: true
+  notes: "Synchronous FastAPI route handlers are dispatched to the thread pool; middleware and file upload handling use async functions."

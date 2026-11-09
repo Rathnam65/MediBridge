@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Bounded implementation tasks for organization tenancy, PostgreSQL persistence, access controls, verification, and documentation in MediBridge.",
+  "tasks": [
+    {
+      "type": "transform",
+      "id": "001-baseline-and-preservation-tests",
+      "description": "Capture current behavior and establish non-destructive test safeguards",
+      "requirements": "Affected areas: tests/test_auth.py, tests/test_medicoders.py, backend/config.py, backend/database.py, and data/database path configuration. Add or refine focused characterization tests for current sign-in/session behavior, per-account case isolation, clinical release gating, synthetic-demo isolation, and preserved analysis/review workflows. Record the current persistence/data paths without reading or changing database contents. Acceptance/tests: existing targeted tests pass; tests verify clinical analysis is denied when the current release-approval conditions fail and synthetic demo inputs are not persisted; test setup uses temporary databases and cannot modify repository databases or catalogs. Do not delete, overwrite, migrate, or inspect clinical/user data.",
+      "dependencies": [],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-sqlalchemy-alembic-postgresql-foundation",
+      "description": "Add PostgreSQL persistence and versioned schema migrations",
+      "requirements": "Affected areas: backend/database.py, new persistence/model and migration modules, backend/config.py, requirements.txt, backend/requirements.txt, Docker/test configuration as needed. Replace direct SQLite-only persistence access incrementally with SQLAlchemy while preserving current behavior and support PostgreSQL through environment-based configuration; introduce Alembic with an initial migration representing current application entities. Keep local testability with disposable SQLite databases where appropriate. Add focused tests for engine/session setup, migration upgrade/downgrade on disposable databases, constraints/indexes, and a PostgreSQL-backed CI/integration path. If testing source-data transfer, use a temporary copied fixture only, compare row counts and key relationships, and prove repeatable/resumable migration behavior. Do not alter the repository's existing database, research database, coding catalogs, or retrieval index. Live data migration is blocked until scope and ownership mapping are confirmed; no destructive migration or implicit tenant assignment.",
+      "dependencies": [
+        "001-baseline-and-preservation-tests"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-organization-membership-and-rbac",
+      "description": "Add organization tenancy, memberships, and role-based authorization",
+      "requirements": "Affected areas: SQLAlchemy models/Alembic revisions, backend/main.py, backend/schemas.py, and authorization/service modules. Add organization and membership records, organization-scoped roles and administrative ownership, and tenant identity on organization-owned users/workspaces/cases/activity/settings as appropriate. Enforce authorization at API/service boundaries and scope every tenant-owned read, write, lookup, and aggregate by authorized organization; do not rely on UI filtering. Preserve existing single-account behavior only where it is explicitly compatible with tenant membership. Add focused tests for role permissions, organization boundaries, IDOR-style cross-tenant reads/writes, list/dashboard/notification isolation, and fail-closed access for records with no approved tenant mapping. Do not expose or arbitrarily attach unmapped legacy records. No new clinical capability or claim.",
+      "dependencies": [
+        "002-sqlalchemy-alembic-postgresql-foundation"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-invitations-admin-lifecycle-and-password-recovery",
+      "description": "Implement invited onboarding and administrator account lifecycle controls",
+      "requirements": "Affected areas: backend/main.py auth endpoints, backend/schemas.py, auth/service modules, tenant membership models, and frontend sign-in/onboarding/admin views. Implement organization-scoped invitation acceptance and administrative activation/deactivation, plus password recovery using expiring, single-use, non-reversible stored tokens and neutral responses that do not disclose account existence. Revoke active sessions when an account is deactivated or credentials are reset; enforce status and organization membership on every protected request. Keep email delivery behind a configurable adapter and do not send real messages until a provider is approved. Add focused API/UI tests for valid, expired, reused, revoked, cross-organization, and unauthorized invitation/recovery flows; activation/deactivation, session revocation, and recovery must be verified. No public self-registration path may bypass organization invitation/admin policy.",
+      "dependencies": [
+        "003-organization-membership-and-rbac"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "005-multi-factor-authentication",
+      "description": "Add configurable multi-factor authentication to organization sign-in",
+      "requirements": "Affected areas: authentication/session services, user security settings, backend auth endpoints/schemas, frontend sign-in and account-security screens, and tests. Add an MFA enrollment/challenge/recovery flow with secrets protected at rest, rate-limited verification, replay/expiry protection, secure recovery-code handling, and admin-controlled policy scoped to an organization/role. Do not choose an external MFA provider without approval; document the selected factor and policy before implementation. Keep MFA secrets out of logs, API responses, and plaintext storage. Add focused tests for enrollment, challenge success/failure, rate limits, recovery, re-enrollment/reset authorization, and session lifecycle. MFA failures must fail closed for accounts subject to MFA policy.",
+      "dependencies": [
+        "004-invitations-admin-lifecycle-and-password-recovery"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "006-research-and-hospital-access-gates",
+      "description": "Separate research/demo access from hospital and clinical access",
+      "requirements": "Affected areas: backend/config.py, backend/main.py route dependencies, organization/role policy, and tests. Establish explicit research/demo versus hospital/clinical access checks so research identities cannot enter hospital workflows and hospital access is limited to authorized organization members and roles. Preserve the existing synthetic-only demo behavior and its non-persistence boundary. Preserve the existing clinical release evidence gate exactly or strengthen it; clinical analysis must remain disabled unless all existing release evidence conditions pass, and synthetic demo mode must continue to disable clinical analysis. Add focused tests for allowed and denied role/mode combinations, missing/invalid approval evidence, mode conflicts, and route-level fail-closed behavior. Do not change NLP, LangGraph, retrieval/RAG, catalog, ingestion, evaluation, or review behavior except to enforce the access gate.",
+      "dependencies": [
+        "005-multi-factor-authentication"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "007-hospital-case-assignment",
+      "description": "Add organization-scoped hospital case assignment and reassignment",
+      "requirements": "Affected areas: case models/migrations, backend/main.py case/dashboard/notification APIs, authorization services, and frontend case queues/details. Add hospital assignment and reassignment operations restricted to authorized hospital administrators or dispatch roles, with assigned-user membership checks and auditable actor/time/organization references. Ensure assigned cases, activity, deadlines, notifications, and dashboards are visible only to authorized users in the same organization and according to role/assignment policy; preserve coder review decisions and workflow state. Add focused tests for assignment, reassignment, unauthorized actors, inactive/non-member targets, cross-organization assignment attempts, visibility before/after assignment, and persistence across PostgreSQL sessions. Research/demo flows must not create persistent hospital assignments.",
+      "dependencies": [
+        "006-research-and-hospital-access-gates"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "008-cross-cutting-regression-and-migration-tests",
+      "description": "Verify tenant isolation, auth journeys, PostgreSQL migration, and preserved workflows",
+      "requirements": "Affected areas: tests, disposable PostgreSQL test configuration, migration fixtures, and existing auth/workflow tests. Add a focused end-to-end regression matrix covering two or more organizations, roles, invited and inactive users, password recovery, MFA policy, hospital assignment, research/demo isolation, and database migration. Include PostgreSQL-backed tests for schema creation/upgrades and persistence; use synthetic/test fixtures only. Retain regression coverage for clinical NLP/context extraction, LangGraph stages, ICD/HCPCS references, retrieval/RAG provenance, ingestion, evaluation, and human-review decisions without representing those tests as clinical validation. Add explicit assertions that blocked clinical analysis remains blocked unless all existing release evidence checks pass. Acceptance: targeted new tests and the existing impacted test suite pass; migration tests use disposable databases; repository-resident database/catalog/index files remain unchanged.",
+      "dependencies": [
+        "007-hospital-case-assignment"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "009-documentation-and-package-hygiene",
+      "description": "Document tenancy operations, PostgreSQL migration, and dependency setup",
+      "requirements": "Affected areas: README.md, ARCHITECTURE.md, deployment/environment examples, requirements.txt, backend/requirements.txt, and migration/operator documentation. Document organization/role flows, invite and account lifecycle operations, password recovery/MFA configuration, research-versus-hospital boundaries, case assignment, PostgreSQL setup, Alembic upgrade/rollback procedures, backup/restore and non-destructive migration prerequisites, and targeted test commands. Reconcile duplicate/root/backend package manifests and declare only required persistence/PostgreSQL dependencies; remove a dependency only when confirmed unused and covered by tests. Document the unresolved legacy-record mapping and require explicit operator approval before touching existing data. State that clinical processing stays disabled unless the existing release evidence gate passes and that the application is not thereby clinically validated or security-certified. Acceptance: clean documented dependency installation, import/startup checks, documentation/config examples consistent with tests, and all impacted tests pass; do not edit or remove data files.",
+      "dependencies": [
+        "008-cross-cutting-regression-and-migration-tests"
+      ],
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    }
+  ],
+  "metadata": {
+    "planName": "organization-tenancy",
+    "projectName": "MediBridge",
+    "language": "python",
+    "createdAt": "2026-11-09T15:55:41+05:30",
+    "version": "1.0"
+  }
+}

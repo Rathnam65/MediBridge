@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: medibridge-guide-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python run.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: APP_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: REQUIRE_POSTGRES
+        value: "true"
+      - key: CLINICAL_DATA_APPROVED
+        value: "false"
+      - key: SYNTHETIC_DEMO_ENABLED
+        value: "true"

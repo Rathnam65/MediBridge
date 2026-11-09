@@ -1,0 +1,145 @@
+metadata:
+  generated: "2026-11-09T10:49:28Z"
+  source_tasks: ".github/modernize/organization-tenancy/.metadata/tasks.json"
+  last_updated: "2026-11-09T10:49:28Z"
+summary:
+  total_tasks: 9
+  completed_tasks: 1
+  in_progress_tasks: 0
+  pending_tasks: 8
+  completion_percentage: 11.1
+tasks:
+  - task_id: "001-baseline-and-preservation-tests"
+    description: "Capture current behavior and establish non-destructive test safeguards"
+    status: "completed"
+    implementation:
+      files_changed:
+        - file: "backend/database.py"
+          changes:
+            - change_type: "modified"
+              description: "Refuse ambiguous settings-schema initialization before schema changes."
+        - file: "tests/conftest.py"
+          changes:
+            - change_type: "added"
+              description: "Redirect application and retrieval stores to temporary test paths before imports."
+        - file: "tests/test_data_safety.py"
+          changes:
+            - change_type: "added"
+              description: "Test isolated paths and data preservation on a synthetic database."
+        - file: "tests/test_auth.py"
+          changes:
+            - change_type: "modified"
+              description: "Add clinical organization-approval fail-closed route coverage."
+        - file: "tests/test_medicoders.py"
+          changes:
+            - change_type: "modified"
+              description: "Assert release evidence alone cannot enable clinical processing."
+    verification:
+      build_passed: true
+      test_results:
+        command: ".\\.venv\\Scripts\\python.exe -m pytest -q"
+        passed: 38
+        failed: 0
+        skipped: 0
+        failures: []
+      notes: "Runtime API probes for /api/health, /api/demo/config, and /api/auth/me returned 200 using disposable stores."
+    upstream_trace:
+      plan_item: "001-baseline-and-preservation-tests"
+      requirements: []
+      full_trace: "organization-tenancy tasks.json#001 -> backend/config.py, backend/database.py, tests -> 38 passing tests"
+  - task_id: "006-research-and-hospital-access-gates"
+    description: "Separate research/demo access from hospital and clinical access"
+    status: "pending"
+    implementation:
+      files_changed:
+        - file: "backend/config.py"
+          changes:
+            - change_type: "modified"
+              description: "Fail closed until organization-scoped approval enforcement exists; full access boundaries remain unimplemented."
+    verification:
+      build_passed: true
+      test_results:
+        command: ".\\.venv\\Scripts\\python.exe -m pytest -q tests/test_data_safety.py tests/test_auth.py::test_clinical_analysis_is_disabled_without_explicit_approval tests/test_auth.py::test_complete_release_evidence_still_cannot_bypass_missing_org_approval tests/test_auth.py::test_synthetic_production_mode_overrides_clinical_approval tests/test_auth.py::test_public_synthetic_inputs_are_ephemeral_and_require_confirmation tests/test_medicoders.py::test_release_gate_requires_every_referenced_approval_and_opt_in"
+        passed: 8
+        failed: 0
+        skipped: 0
+        failures: []
+      notes: "Clinical gate hardening is partial and does not complete tenant or research/hospital authorization."
+    upstream_trace:
+      plan_item: "006-research-and-hospital-access-gates"
+      requirements: []
+      full_trace: "organization-tenancy tasks.json#006 -> backend/config.py and tests/test_auth.py -> route-level 503 with no persisted case"
+pending_tasks:
+  - task_id: "002-sqlalchemy-alembic-postgresql-foundation"
+    description: "Add PostgreSQL persistence and versioned schema migrations"
+    blocked_by: []
+    priority: "P1"
+  - task_id: "003-organization-membership-and-rbac"
+    description: "Add organization tenancy, memberships, and role-based authorization"
+    blocked_by:
+      - "002-sqlalchemy-alembic-postgresql-foundation"
+    priority: "P1"
+  - task_id: "004-invitations-admin-lifecycle-and-password-recovery"
+    description: "Implement invited onboarding and administrator account lifecycle controls"
+    blocked_by:
+      - "003-organization-membership-and-rbac"
+    priority: "P1"
+  - task_id: "005-multi-factor-authentication"
+    description: "Add configurable multi-factor authentication to organization sign-in"
+    blocked_by:
+      - "004-invitations-admin-lifecycle-and-password-recovery"
+    priority: "P1"
+  - task_id: "006-research-and-hospital-access-gates"
+    description: "Complete research/demo and hospital/clinical access separation"
+    blocked_by:
+      - "005-multi-factor-authentication"
+    priority: "P1"
+  - task_id: "007-hospital-case-assignment"
+    description: "Add organization-scoped hospital case assignment and reassignment"
+    blocked_by:
+      - "006-research-and-hospital-access-gates"
+    priority: "P1"
+  - task_id: "008-cross-cutting-regression-and-migration-tests"
+    description: "Verify tenant isolation, auth journeys, PostgreSQL migration, and preserved workflows"
+    blocked_by:
+      - "007-hospital-case-assignment"
+    priority: "P1"
+  - task_id: "009-documentation-and-package-hygiene"
+    description: "Document tenancy operations, PostgreSQL migration, and dependency setup"
+    blocked_by:
+      - "008-cross-cutting-regression-and-migration-tests"
+    priority: "P2"
+untracked_changes: []
+traceability_chain:
+  - chain_id: "TRACE-ORGTEN-001"
+    requirement: "Preserve existing data and characterize application behavior."
+    plan_phase: "Stage 1"
+    plan_item: "001-baseline-and-preservation-tests"
+    tasks:
+      - "001-baseline-and-preservation-tests"
+    files:
+      - "backend/database.py"
+      - "tests/conftest.py"
+      - "tests/test_data_safety.py"
+      - "tests/test_auth.py"
+      - "tests/test_medicoders.py"
+    status: "complete"
+  - chain_id: "TRACE-ORGTEN-006"
+    requirement: "Clinical analysis remains disabled until organization-scoped approvals can be enforced."
+    plan_phase: "Stage 3"
+    plan_item: "006-research-and-hospital-access-gates"
+    tasks:
+      - "006-research-and-hospital-access-gates"
+    files:
+      - "backend/config.py"
+      - "tests/test_auth.py"
+      - "tests/test_medicoders.py"
+    status: "partial"
+validation:
+  passed: false
+  errors: []
+  warnings:
+    - "Task 006 is only partially implemented; the remaining access gates are pending."
+    - "The resident database was not opened, so current schema shape was not validated."
+  blocking_issues:
+    - "Tasks 002-009 remain pending or blocked; this checkpoint is not a completion sign-off for the approved plan."

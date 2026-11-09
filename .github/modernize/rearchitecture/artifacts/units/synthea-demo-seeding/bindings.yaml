@@ -1,0 +1,9 @@
+unit: synthea-demo-seeding
+bindings:
+  - type: "convention"
+    name: "Python CLI entrypoint"
+    source_loc: "scripts/seed_synthea_demo.py:133"
+    target: "main()"
+    must_appear_in_target: true
+    notes: "Consumes a positional Synthea CSV folder and prints one-time generated demo credentials."
+runtime_config: []

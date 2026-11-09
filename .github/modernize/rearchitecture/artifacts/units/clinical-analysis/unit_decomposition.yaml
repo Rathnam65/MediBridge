@@ -1,0 +1,16 @@
+unit: clinical-analysis
+commit: false
+candidate_splits:
+  - id: "backend/services/pipeline.py:6-22"
+    drivers: [concern_split, reuse_split]
+    rationale: >
+      Catalog loading and normalization have a separate lifecycle from clinical
+      extraction and may be reused by an offline index-building command.
+    source_slice: {file: backend/services/pipeline.py, lines: [6, 22]}
+  - id: "backend/services/pipeline.py:34-66"
+    drivers: [concern_split, execution_model_split]
+    rationale: >
+      Clinical phrase extraction, negation handling, code retrieval, and
+      documentation-gap validation are separate stages currently called in one
+      synchronous pipeline.
+    source_slice: {file: backend/services/pipeline.py, lines: [34, 66]}

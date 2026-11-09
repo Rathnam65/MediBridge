@@ -1,0 +1,15 @@
+unit: web-client
+commit: false
+candidate_splits:
+  - id: "frontend/app.js:118-210"
+    drivers: [concern_split, change_cadence_split]
+    rationale: >
+      Dashboard/case/catalog data loading and document-analysis interactions
+      are concentrated in a single script and have separate API and UI behavior.
+    source_slice: {file: frontend/app.js, lines: [118, 210]}
+  - id: "frontend/app.js:252-330"
+    drivers: [concern_split, lifecycle_split]
+    rationale: >
+      Notification behavior, authentication form wiring, and session restoration
+      are separate lifecycle concerns currently initialized in the same file.
+    source_slice: {file: frontend/app.js, lines: [252, 330]}
