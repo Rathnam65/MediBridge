@@ -58,7 +58,7 @@ class DecisionRequest(BaseModel):
 class SignupRequest(BaseModel):
     full_name: str = Field(min_length=2, max_length=100)
     email: str = Field(min_length=3, max_length=254)
-    password: str = Field(min_length=12, max_length=128)
+    password: str = Field(min_length=6, max_length=128)
 
 
 class LoginRequest(BaseModel):

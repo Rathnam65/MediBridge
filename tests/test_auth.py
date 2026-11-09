@@ -95,6 +95,52 @@ def test_authentication_and_case_ownership_are_enforced(tmp_path, monkeypatch):
         assert coder.get('/api/dashboard').status_code == 401
 
 
+def test_dashboard_code_match_total_includes_older_cases(tmp_path, monkeypatch):
+    monkeypatch.setattr(database, 'DB', tmp_path / 'medibridge-dashboard-test.db')
+    database.init_db()
+
+    with TestClient(app) as client:
+        signup = client.post('/api/auth/signup', json={
+            'full_name': 'Dashboard Coder',
+            'email': 'dashboard@example.org',
+            'password': 'guidepass6',
+        })
+        assert signup.status_code == 200
+        connection = database.conn()
+        user_id = connection.execute(
+            'SELECT id FROM users WHERE email=?', ('dashboard@example.org',)
+        ).fetchone()['id']
+        for index in range(7):
+            connection.execute(
+                'INSERT INTO cases(id,user_id,created_at,assigned_at,deadline_at,'
+                'document_name,source,text,status,overall_confidence,extracted_json,'
+                'recommendations_json,gaps_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                (
+                    f'QA-{index}',
+                    user_id,
+                    f'2026-03-{index + 1:02d}T12:00:00+00:00',
+                    None,
+                    None,
+                    f'Guide note {index}.txt',
+                    'text',
+                    'Fictional classroom material.',
+                    'Pending',
+                    80,
+                    '{}',
+                    '[{},{}]',
+                    '[]',
+                ),
+            )
+        connection.commit()
+        connection.close()
+
+        dashboard = client.get('/api/dashboard')
+        assert dashboard.status_code == 200
+        assert dashboard.json()['metrics']['documents_analyzed'] == 7
+        assert dashboard.json()['metrics']['recommendations'] == 14
+        assert len(dashboard.json()['cases']) == 6
+
+
 def test_signup_rejects_duplicate_accounts_and_weak_passwords(tmp_path, monkeypatch):
     monkeypatch.setattr(database, 'DB', tmp_path / 'medibridge-test.db')
     database.init_db()
@@ -108,6 +154,10 @@ def test_signup_rejects_duplicate_accounts_and_weak_passwords(tmp_path, monkeypa
         assert client.post('/api/auth/signup', json=account).status_code == 200
         assert client.post('/api/auth/signup', json=account).status_code == 409
         account['email'] = 'another@example.org'
+        account['password'] = 'six789'
+        accepted = client.post('/api/auth/signup', json=account)
+        assert accepted.status_code == 200
+        account['email'] = 'short@example.org'
         account['password'] = 'short'
         assert client.post('/api/auth/signup', json=account).status_code == 422
 

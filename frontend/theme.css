@@ -233,6 +233,38 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .auth-foot { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .signout { margin-left: 9px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink-soft); font-size: 10px; cursor: pointer; }
 
+.result-heading-actions { display: flex; align-items: center; gap: 8px; }
+.case-table { min-width: 930px; }
+.case-table th { white-space: nowrap; }
+.document-name, .document-type { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.document-type { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.code-count { display: inline-grid; min-width: 27px; min-height: 24px; place-items: center; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-soft); color: var(--ink-soft); font: 600 11px "IBM Plex Mono", monospace; }
+.code-counts { display: grid; gap: 4px; color: var(--ink-soft); font-size: 10px; }
+.case-actions { position: relative; }
+.case-actions summary { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--line); border-radius: 5px; color: var(--ink-soft); cursor: pointer; font-size: 15px; list-style: none; }
+.case-actions summary::-webkit-details-marker { display: none; }
+.case-actions[open] summary { border-color: var(--line-strong); background: var(--surface-soft); }
+.case-actions-menu { position: absolute; z-index: 4; top: calc(100% + 4px); right: 0; min-width: 148px; padding: 5px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: 0 8px 24px rgba(27,49,41,.12); }
+.case-actions-menu button { display: block; width: 100%; padding: 8px 9px; border: 0; border-radius: 4px; background: transparent; color: var(--ink-soft); text-align: left; font-size: 11px; cursor: pointer; }
+.case-actions-menu button:hover { background: var(--surface-soft); color: var(--navy); }
+.case-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line); }
+.case-pagination[hidden] { display: none; }
+.case-pagination span { color: var(--muted); font-size: 10px; }
+.case-pagination button { min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink-soft); font-size: 10px; cursor: pointer; }
+.case-pagination button:disabled { opacity: .5; cursor: not-allowed; }
+.result-summary-cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin: 12px 0; }
+.result-summary-card { display: grid; gap: 6px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.result-summary-card small { color: var(--muted); font-size: 10px; }
+.result-summary-card b { color: var(--ink); font-size: 15px; }
+.recommendation-group { padding: 4px 16px 10px; }
+.recommendation-group + .recommendation-group { border-top: 1px solid var(--line); padding-top: 14px; }
+.recommendation-group-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 0 10px; }
+.recommendation-group-heading h3 { margin: 0; color: var(--navy); font-size: 12px; }
+.recommendation-group-heading span { color: var(--muted); font-size: 10px; }
+.recommendation-group .rec { padding: 13px 0; border-top: 1px solid var(--line); }
+.recommendation-group .rec:first-of-type { border-top: 0; }
+.recommendation-group .rec-actions { padding-top: 10px; }
+
 @media (max-width: 760px) {
   .auth-screen { padding: 20px; }
   .auth-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; width: min(100%, 460px); min-height: auto; margin: 42px auto 0; }
@@ -240,4 +272,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .auth-intro p { font-size: 13px; }
   .auth-points { gap: 8px; margin-top: 18px; font-size: 11px; }
   .auth-card { padding: 22px; }
+  .result-heading-actions { width: 100%; }
+}
+@media (max-width: 560px) {
+  .result-heading-actions { align-items: stretch; flex-direction: column-reverse; }
+  .result-summary-cards { grid-template-columns: 1fr; }
+  .case-pagination { justify-content: center; padding: 12px; }
 }

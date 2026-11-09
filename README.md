@@ -8,7 +8,9 @@ MediBridge is a self-hosted web application for medical coders. Users create an 
 - Search the configured ICD-10-CM and HCPCS reference catalogs.
 - Review catalog-backed text matches, supporting excerpts, and coder-review flags. Match scores are not coding-accuracy probabilities.
 - Track cases and human review decisions in a private account workspace.
+- Browse cases with status filters, search, pagination, separate ICD-10-CM and HCPCS counts, and row actions. Result reports group recommendations by catalog and can be printed or saved as PDF from the browser.
 - Register with an email and password; sessions use expiring HTTP-only cookies.
+- Account passwords require at least 6 characters; use a longer, unique password for better security.
 
 ## Run locally
 

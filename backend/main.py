@@ -370,8 +370,8 @@ def auth_me(request: Request):
 
 @app.get('/api/dashboard')
 def dashboard(user=Depends(current_user)):
-    c=conn(); total=c.execute('SELECT COUNT(*) n FROM cases WHERE user_id=?',(user['id'],)).fetchone()['n']; review=c.execute("SELECT COUNT(*) n FROM cases WHERE user_id=? AND status='Review'",(user['id'],)).fetchone()['n']; avg=c.execute('SELECT AVG(overall_confidence) a FROM cases WHERE user_id=?',(user['id'],)).fetchone()['a'] or 0; activity=c.execute('SELECT * FROM activity WHERE user_id=? ORDER BY id DESC LIMIT 8',(user['id'],)).fetchall(); cases=c.execute('SELECT * FROM cases WHERE user_id=? ORDER BY created_at DESC LIMIT 6',(user['id'],)).fetchall(); c.close()
-    rec_count=sum(len(json.loads(r['recommendations_json'])) for r in cases)
+    c=conn(); total=c.execute('SELECT COUNT(*) n FROM cases WHERE user_id=?',(user['id'],)).fetchone()['n']; review=c.execute("SELECT COUNT(*) n FROM cases WHERE user_id=? AND status='Review'",(user['id'],)).fetchone()['n']; avg=c.execute('SELECT AVG(overall_confidence) a FROM cases WHERE user_id=?',(user['id'],)).fetchone()['a'] or 0; activity=c.execute('SELECT * FROM activity WHERE user_id=? ORDER BY id DESC LIMIT 8',(user['id'],)).fetchall(); cases=c.execute('SELECT * FROM cases WHERE user_id=? ORDER BY created_at DESC LIMIT 6',(user['id'],)).fetchall(); all_recommendations=c.execute('SELECT recommendations_json FROM cases WHERE user_id=?',(user['id'],)).fetchall(); c.close()
+    rec_count=sum(len(json.loads(r['recommendations_json'])) for r in all_recommendations)
     return {'metrics':{'documents_analyzed':total,'recommendations':rec_count,'needs_validation':review,'avg_confidence':round(avg,1)},'cases':[serialize(r) for r in cases],'activity':[dict(x) for x in activity]}
 
 @app.get('/api/cases')
